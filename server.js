@@ -45,13 +45,16 @@ app.post('/api/models', async (req, res) => {
 });
 
 app.post('/api/chat', async (req, res) => {
-  const { url, key, preset, model, sysPrompt, userPrompt, temp, topP, maxTokens } = req.body;
+  const { url, key, preset, model, sysPrompt, userPrompt, temp, topP, maxTokens, timeoutMs } = req.body;
   const t0 = Date.now();
   let ttft = 0;
+  const timeout = timeoutMs || 5000;
 
   try {
     // Anthropic Native Handler
     if (preset === 'anthropic' || url?.includes('anthropic.com')) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeout);
       const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
@@ -63,18 +66,20 @@ app.post('/api/chat', async (req, res) => {
           model,
           messages: [{ role: 'user', content: userPrompt || 'OK' }],
           max_tokens: maxTokens || 128
-        })
+        }),
+        signal: controller.signal
       });
+      clearTimeout(timer);
       const data = await response.json();
       const latency = Date.now() - t0;
       const text = data.content?.[0]?.text || data.error?.message || '';
       const tokens = text.split(/\s+/).length;
       const tps = (tokens / (latency / 1000)).toFixed(1);
-      return res.json({ reply: text, metrics: { ttft: Math.round(latency * 0.4), latency, tps } });
+      return res.json({ reply: text, metrics: { ttft: Math.round(latency * 0.4), latency, tps, tokens } });
     }
 
     // Standard OpenAI API Handler with TTFT calculation
-    const client = new OpenAI({ apiKey: key || 'dummy', baseURL: url, timeout: 5000 });
+    const client = new OpenAI({ apiKey: key || 'dummy', baseURL: url, timeout });
     const stream = await client.chat.completions.create({
       model,
       messages: [
@@ -102,7 +107,7 @@ app.post('/api/chat', async (req, res) => {
     const tokenCount = reply.split(/\s+/).length || 1;
     const tps = (tokenCount / (latency / 1000)).toFixed(1);
 
-    res.json({ reply, metrics: { ttft: ttft || latency, latency, tps } });
+    res.json({ reply, metrics: { ttft: ttft || latency, latency, tps, tokens: tokenCount } });
   } catch (e) {
     res.json({ error: `${e.name}: ${e.message}` });
   }

@@ -43,11 +43,11 @@
           </div>
           <div class="space-y-1">
             <label class="text-xs font-semibold uppercase text-slate-500">Base URL</label>
-            <input id="url" type="text" placeholder="https://api.openai.com/v1" class="flex h-9 w-full rounded-md border border-slate-200 bg-white px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-slate-950"/>
+            <input id="url" type="text" oninput="saveCredentials()" placeholder="https://api.openai.com/v1" class="flex h-9 w-full rounded-md border border-slate-200 bg-white px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-slate-950"/>
           </div>
           <div class="space-y-1">
             <label class="text-xs font-semibold uppercase text-slate-500">API Key</label>
-            <input id="key" type="password" placeholder="sk-..." class="flex h-9 w-full rounded-md border border-slate-200 bg-white px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-slate-950"/>
+            <input id="key" type="password" oninput="saveCredentials()" placeholder="sk-..." class="flex h-9 w-full rounded-md border border-slate-200 bg-white px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-slate-950"/>
           </div>
         </div>
 
@@ -65,18 +65,32 @@
                 <textarea id="userPrompt" rows="2" class="w-full text-xs rounded-md border border-slate-200 p-2 focus:outline-none focus:ring-1 focus:ring-slate-950">Reply with exactly: OK</textarea>
               </div>
             </div>
-            <div class="grid grid-cols-3 gap-2">
-              <div>
-                <label class="text-xs font-medium text-slate-600">Temperature</label>
-                <input id="temp" type="number" step="0.1" min="0" max="2" value="0.7" class="w-full text-xs rounded-md border border-slate-200 p-2"/>
+            <div class="space-y-3">
+              <div class="grid grid-cols-3 gap-2">
+                <div>
+                  <label class="text-xs font-medium text-slate-600">Temperature</label>
+                  <input id="temp" type="number" step="0.1" min="0" max="2" value="0.7" class="w-full text-xs rounded-md border border-slate-200 p-2"/>
+                </div>
+                <div>
+                  <label class="text-xs font-medium text-slate-600">Top P</label>
+                  <input id="topP" type="number" step="0.1" min="0" max="1" value="1.0" class="w-full text-xs rounded-md border border-slate-200 p-2"/>
+                </div>
+                <div>
+                  <label class="text-xs font-medium text-slate-600">Max Tokens</label>
+                  <input id="maxTokens" type="number" min="1" max="4096" value="128" class="w-full text-xs rounded-md border border-slate-200 p-2"/>
+                </div>
               </div>
-              <div>
-                <label class="text-xs font-medium text-slate-600">Top P</label>
-                <input id="topP" type="number" step="0.1" min="0" max="1" value="1.0" class="w-full text-xs rounded-md border border-slate-200 p-2"/>
-              </div>
-              <div>
-                <label class="text-xs font-medium text-slate-600">Max Tokens</label>
-                <input id="maxTokens" type="number" min="1" max="4096" value="128" class="w-full text-xs rounded-md border border-slate-200 p-2"/>
+              <div class="grid grid-cols-2 gap-3 pt-1 border-t border-slate-200">
+                <div>
+                  <div class="flex justify-between items-center text-xs font-medium text-slate-600 mb-1">
+                    <span>Timeout: <b id="timeoutVal">5s</b></span>
+                  </div>
+                  <input id="timeoutSlider" type="range" min="2" max="15" value="5" oninput="$('timeoutVal').textContent=this.value+'s'" class="w-full accent-slate-900"/>
+                </div>
+                <div class="flex items-center gap-2 pt-3">
+                  <input id="autoRetry" type="checkbox" class="rounded border-slate-300 text-slate-900 focus:ring-slate-950"/>
+                  <label for="autoRetry" class="text-xs font-medium text-slate-700 select-none">Auto-Retry on Rate Limit</label>
+                </div>
               </div>
             </div>
           </div>
@@ -86,6 +100,7 @@
           <div class="flex gap-2">
             <button id="btnLoad" onclick="loadModels()" class="rounded-md text-sm font-medium h-9 px-4 bg-slate-900 text-white hover:bg-slate-800">Load Models</button>
             <button id="btnTest" onclick="testAll()" disabled class="rounded-md text-sm font-medium h-9 px-4 bg-slate-100 text-slate-900 hover:bg-slate-200 disabled:opacity-50">Test All Models</button>
+            <button id="btnTestSelected" onclick="testSelected()" disabled class="rounded-md text-sm font-medium h-9 px-3 border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-50">Test Selected</button>
           </div>
           <div class="flex gap-2">
             <button onclick="exportData('json')" class="text-xs border border-slate-200 rounded-md px-3 py-1.5 hover:bg-slate-100">Export JSON</button>
@@ -98,16 +113,21 @@
 
       <!-- Models List Card -->
       <div class="rounded-xl border border-slate-200 bg-white shadow-sm p-6 space-y-4">
-        <div class="flex items-center justify-between border-b pb-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between border-b pb-4 gap-4">
           <div>
             <h4 class="font-semibold text-slate-900">Models (<span id="count">0</span>)</h4>
             <div id="summary" class="hidden flex gap-3 text-xs mt-2">
               <span class="text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-200">Work: <b id="totWork">0</b></span>
               <span class="text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Limit: <b id="totLimit">0</b></span>
               <span class="text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-200">Fail: <b id="totFail">0</b></span>
+              <span class="text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">Tokens: <b id="totTokens">0</b></span>
             </div>
           </div>
-          <span id="loader" class="hidden text-sm text-slate-500 animate-pulse">Loading...</span>
+          <div class="flex items-center gap-3">
+            <input id="searchModel" type="text" oninput="filterModels()" placeholder="Search models..." class="h-8 text-xs px-3 rounded-md border border-slate-200 w-48 focus:outline-none focus:ring-1 focus:ring-slate-950"/>
+            <button onclick="toggleSelectAll()" class="text-xs border border-slate-200 rounded-md px-2.5 py-1.5 hover:bg-slate-100">Toggle Select All</button>
+            <span id="loader" class="hidden text-sm text-slate-500 animate-pulse">Loading...</span>
+          </div>
         </div>
 
         <div id="empty" class="text-center py-8 text-sm text-slate-500">No models loaded. Choose a preset or enter endpoint above.</div>
@@ -168,6 +188,7 @@
     let MODEL_GROUPS = {};
     let STATUS = {};
     let TEST_RESULTS = [];
+    let TOTAL_TOKENS = 0;
     const $ = id => document.getElementById(id);
     const safeId = s => btoa(unescape(encodeURIComponent(s))).replace(/[^a-zA-Z0-9]/g, '');
 
@@ -182,9 +203,24 @@
       gemini: 'https://generativelanguage.googleapis.com'
     };
 
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedUrl = localStorage.getItem('model_tester_url');
+      const savedKey = localStorage.getItem('model_tester_key');
+      if (savedUrl) $('url').value = savedUrl;
+      if (savedKey) $('key').value = savedKey;
+    });
+
+    function saveCredentials() {
+      localStorage.setItem('model_tester_url', $('url').value);
+      localStorage.setItem('model_tester_key', $('key').value);
+    }
+
     function applyPreset() {
       const p = $('preset').value;
-      if (PRESETS[p]) $('url').value = PRESETS[p];
+      if (PRESETS[p]) {
+        $('url').value = PRESETS[p];
+        saveCredentials();
+      }
     }
 
     function switchTab(tab) {
@@ -238,6 +274,7 @@
       if (!item) return;
       $('url').value = item.url || '';
       $('preset').value = item.preset || 'custom';
+      saveCredentials();
       switchTab('tester');
     }
 
@@ -257,7 +294,11 @@
     }
 
     function getProvider(m) {
-      return m.includes('/') ? m.split('/')[0] : 'Other';
+      if (m.includes('/')) {
+        const p = m.split('/')[0];
+        return (p === 'ps') ? 'ps/poolside' : p;
+      }
+      return 'Other';
     }
 
     function updateSummary() {
@@ -271,24 +312,25 @@
       if ($('totWork')) $('totWork').textContent = w;
       if ($('totLimit')) $('totLimit').textContent = l;
       if ($('totFail')) $('totFail').textContent = f;
+      if ($('totTokens')) $('totTokens').textContent = TOTAL_TOKENS;
       if ($('summary')) $('summary').classList.remove('hidden');
+    }
 
-      // Update per category counter
+    function filterModels() {
+      const query = $('searchModel').value.toLowerCase().trim();
       Object.keys(MODEL_GROUPS).forEach(p => {
-        let cw = 0, cl = 0, cf = 0;
         MODEL_GROUPS[p].forEach(m => {
-          const s = STATUS[m];
-          if (s === 'ok') cw++;
-          else if (s === 'limit') cl++;
-          else if (s === 'fail') cf++;
+          const sid = safeId(m);
+          const el = document.getElementById('row-' + sid);
+          if (el) el.classList.toggle('hidden', query && !m.toLowerCase().includes(query));
         });
-        const catWork = $('catWork-' + safeId(p));
-        const catLimit = $('catLimit-' + safeId(p));
-        const catFail = $('catFail-' + safeId(p));
-        if (catWork) catWork.textContent = cw;
-        if (catLimit) catLimit.textContent = cl;
-        if (catFail) catFail.textContent = cf;
       });
+    }
+
+    function toggleSelectAll() {
+      const checkboxes = document.querySelectorAll('.model-checkbox');
+      const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+      checkboxes.forEach(cb => cb.checked = !allChecked);
     }
 
     async function loadModels() {
@@ -298,6 +340,7 @@
       if (!targetUrl && PRESETS[presetVal]) {
         targetUrl = PRESETS[presetVal];
         $('url').value = targetUrl;
+        saveCredentials();
       }
 
       if (!targetUrl) {
@@ -308,6 +351,7 @@
 
       $('err').classList.add('hidden');
       $('btnTest').disabled = true;
+      $('btnTestSelected').disabled = true;
       $('loader').classList.remove('hidden');
       $('models').innerHTML = '';
       $('empty').classList.remove('hidden');
@@ -315,6 +359,7 @@
       STATUS = {};
       TEST_RESULTS = [];
       MODEL_GROUPS = {};
+      TOTAL_TOKENS = 0;
       $('summary').classList.add('hidden');
 
       try {
@@ -354,8 +399,9 @@
           const catId = safeId(p);
           const list = MODEL_GROUPS[p].map(m => {
             const sid = safeId(m);
-            return `<div class="flex items-center justify-between py-2 text-sm">
+            return `<div id="row-${sid}" class="flex items-center justify-between py-2 text-sm">
               <div class="flex items-center gap-2">
+                <input type="checkbox" value="${m}" class="model-checkbox rounded border-slate-300 text-slate-900 focus:ring-slate-950"/>
                 <span class="font-mono text-slate-700">${m}</span>
                 <button onclick="copyId('${m}', this)" class="text-xs text-slate-400 hover:text-slate-700 border border-slate-200 rounded px-1.5 py-0.5">Copy</button>
               </div>
@@ -370,11 +416,6 @@
             <div class="flex items-center justify-between border-b pb-2 border-slate-200">
               <div class="flex items-center gap-3">
                 <h5 class="font-bold text-sm text-slate-800 uppercase tracking-wider">${p} (${MODEL_GROUPS[p].length})</h5>
-                <div class="flex gap-1 text-[11px]">
-                  <span class="text-green-700 bg-green-50 px-1.5 py-0.5 rounded border border-green-200">W: <b id="catWork-${catId}">0</b></span>
-                  <span class="text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">L: <b id="catLimit-${catId}">0</b></span>
-                  <span class="text-red-700 bg-red-50 px-1.5 py-0.5 rounded border border-red-200">F: <b id="catFail-${catId}">0</b></span>
-                </div>
               </div>
               <button onclick="testCategory('${p}')" class="text-xs font-medium px-2 py-1 rounded bg-slate-900 text-white hover:bg-slate-800">Test Category</button>
             </div>
@@ -383,6 +424,7 @@
         }).join('');
 
         $('btnTest').disabled = false;
+        $('btnTestSelected').disabled = false;
       } catch(e) {
         $('loader').classList.add('hidden');
         $('err').textContent = 'Network error fetching models: ' + e.message;
@@ -397,14 +439,15 @@
       setTimeout(() => { btn.textContent = prev; }, 1500);
     }
 
-    async function testOne(m) {
+    async function testOne(m, isRetry = false) {
       const sid = safeId(m);
       const target = $('st-' + sid);
       if (!target) return;
 
-      target.innerHTML = '<span class="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700 animate-pulse">Testing...</span>';
+      target.innerHTML = `<span class="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700 animate-pulse">${isRetry ? 'Retrying...' : 'Testing...'}</span>`;
 
       try {
+        const timeoutMs = parseInt($('timeoutSlider').value) * 1000;
         const res = await fetch('/api/chat', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
@@ -417,12 +460,29 @@
             userPrompt: $('userPrompt').value,
             temp: parseFloat($('temp').value),
             topP: parseFloat($('topP').value),
-            maxTokens: parseInt($('maxTokens').value)
+            maxTokens: parseInt($('maxTokens').value),
+            timeoutMs: timeoutMs
           })
         });
         const d = await res.json();
+
+        // Auto-Retry handling if rate limited
+        if (d.error && $('autoRetry').checked && !isRetry && d.error.includes('limit')) {
+          await new Promise(r => setTimeout(r, 2000));
+          return await testOne(m, true);
+        }
+
         const cmpBtn = `<button onclick="testCompat('${m}')" id="cmp-${sid}" class="ml-1 rounded text-xs font-medium h-7 px-2 bg-slate-100 hover:bg-slate-200">Compat</button>`;
-        const metricsHtml = d.metrics ? `<span class="text-xs text-slate-400 font-mono" title="TTFT: ${d.metrics.ttft}ms | ${d.metrics.tps} t/s">${d.metrics.latency}ms</span>` : '';
+
+        let latencyBar = '';
+        if (d.metrics) {
+          TOTAL_TOKENS += (d.metrics.tokens || 0);
+          const pct = Math.min(100, Math.round((d.metrics.latency / 3000) * 100));
+          const color = pct < 40 ? 'bg-green-500' : pct < 75 ? 'bg-amber-500' : 'bg-red-500';
+          latencyBar = `<div class="w-12 bg-slate-200 h-1.5 rounded-full overflow-hidden inline-block align-middle ml-1" title="${d.metrics.latency}ms"><div class="${color} h-full" style="width: ${pct}%"></div></div>`;
+        }
+
+        const metricsHtml = d.metrics ? `<span class="text-xs text-slate-400 font-mono" title="TTFT: ${d.metrics.ttft}ms | ${d.metrics.tps} t/s">${d.metrics.latency}ms</span> ${latencyBar}` : '';
 
         let badge = '';
         if (d.error) {
@@ -457,6 +517,20 @@
         const batch = models.slice(i, i + CONCURRENCY);
         await Promise.all(batch.map(m => testOne(m)));
       }
+    }
+
+    async function testSelected() {
+      const checkedBoxes = Array.from(document.querySelectorAll('.model-checkbox:checked'));
+      const selectedModels = checkedBoxes.map(cb => cb.value);
+      if (!selectedModels.length) return alert('No models selected! Check the boxes next to models to test.');
+
+      $('btnTestSelected').disabled = true;
+      const CONCURRENCY = 5;
+      for (let i = 0; i < selectedModels.length; i += CONCURRENCY) {
+        const batch = selectedModels.slice(i, i + CONCURRENCY);
+        await Promise.all(batch.map(m => testOne(m)));
+      }
+      $('btnTestSelected').disabled = false;
     }
 
     async function testAll() {

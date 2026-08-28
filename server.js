@@ -35,7 +35,9 @@ app.post('/api/models', async (req, res) => {
     const client = new OpenAI({ apiKey: key || 'dummy', baseURL: url });
     const list = await client.models.list();
     const models = [];
-    for await (const m of list) models.push(m.id);
+    for await (const m of list) {
+      models.push(typeof m === 'string' ? m : (m.id || m.toString()));
+    }
     res.json({ models });
   } catch (e) {
     res.json({ error: `${e.name}: ${e.message}` });
@@ -106,7 +108,19 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-const LIMIT_HINT = 'prevent abuse of free resources';
+const LIMIT_HINT = [
+  'prevent abuse of free resources',
+  'limit exceeded',
+  'rate limit exceeded',
+  'rate_limit_exceeded',
+  'insufficient quota',
+  'quota exceeded',
+  '429',
+  'requests per minute',
+  'tokens per minute',
+  'unlock',
+  'add credits',
+];
 
 app.post('/api/compat', async (req, res) => {
   const { url, key, model } = req.body;
@@ -122,7 +136,7 @@ app.post('/api/compat', async (req, res) => {
       max_tokens: 32,
     });
     const content = r.choices[0]?.message?.content || '';
-    if (content.includes(LIMIT_HINT)) {
+    if (LIMIT_HINT.some(h => content.includes(h))) {
       out.chat = 'limit'; out.tools = 'limit'; out.json = 'limit';
     } else {
       out.chat = 'ok';
@@ -130,7 +144,7 @@ app.post('/api/compat', async (req, res) => {
       out.json = content.trim().startsWith('{') ? 'ok' : 'fail';
     }
   } catch (e) {
-    const st = e.message?.includes(LIMIT_HINT) ? 'limit' : 'fail';
+    const st = LIMIT_HINT.some(h => e.message?.includes(h)) ? 'limit' : 'fail';
     out.chat = st; out.tools = st; out.json = st;
   }
 
@@ -145,7 +159,7 @@ app.post('/api/compat', async (req, res) => {
     for await (const chunk of stream) { hasChunks = true; break; }
     out.stream = hasChunks ? 'ok' : 'fail';
   } catch (e) {
-    out.stream = e.message?.includes(LIMIT_HINT) ? 'limit' : 'fail';
+    out.stream = LIMIT_HINT.some(h => e.message?.includes(h)) ? 'limit' : 'fail';
   }
 
   try {
@@ -161,9 +175,9 @@ app.post('/api/compat', async (req, res) => {
       max_tokens: 5,
     });
     const content = r.choices[0]?.message?.content || '';
-    out.vision = content.includes(LIMIT_HINT) ? 'limit' : 'ok';
+    out.vision = LIMIT_HINT.some(h => content.includes(h)) ? 'limit' : 'ok';
   } catch (e) {
-    out.vision = e.message?.includes(LIMIT_HINT) ? 'limit' : 'fail';
+    out.vision = LIMIT_HINT.some(h => e.message?.includes(h)) ? 'limit' : 'fail';
   }
 
   res.json({ result: out });

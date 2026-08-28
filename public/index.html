@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Model Tester Pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased min-h-screen p-6">
+  <div class="max-w-6xl mx-auto space-y-6">
+
+    <!-- Header & Nav Tabs -->
+    <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight text-slate-900">AI Model Tester Pro</h1>
+        <p class="text-sm text-slate-500">Test endpoints, custom params, benchmarks, capability checks, and history.</p>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="switchTab('tester')" id="tabBtnTester" class="px-3 py-1.5 text-sm font-medium rounded-md bg-slate-900 text-white">Tester</button>
+        <button onclick="switchTab('compare')" id="tabBtnCompare" class="px-3 py-1.5 text-sm font-medium rounded-md bg-slate-100 text-slate-700 hover:bg-slate-200">Compare</button>
+        <button onclick="switchTab('history')" id="tabBtnHistory" class="px-3 py-1.5 text-sm font-medium rounded-md bg-slate-100 text-slate-700 hover:bg-slate-200">History</button>
+      </div>
+    </div>
+
+    <!-- TAB: TESTER -->
+    <div id="tabTester" class="space-y-6">
+      <!-- Config Card -->
+      <div class="rounded-xl border border-slate-200 bg-white shadow-sm p-6 space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="space-y-1">
+            <label class="text-xs font-semibold uppercase text-slate-500">Provider Preset</label>
+            <select id="preset" onchange="applyPreset()" class="flex h-9 w-full rounded-md border border-slate-200 bg-white px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-slate-950">
+              <option value="custom">Custom Endpoint</option>
+              <option value="openrouter">OpenRouter (https://openrouter.ai/api/v1)</option>
+              <option value="groq">Groq (https://api.groq.com/openai/v1)</option>
+              <option value="together">Together AI (https://api.together.xyz/v1)</option>
+              <option value="ollama">Ollama Local (http://localhost:11434/v1)</option>
+              <option value="lmstudio">LM Studio Local (http://localhost:1234/v1)</option>
+              <option value="vllm">vLLM / LocalAI (http://localhost:8000/v1)</option>
+              <option value="anthropic">Anthropic (https://api.anthropic.com)</option>
+              <option value="gemini">Google Gemini (https://generativelanguage.googleapis.com)</option>
+            </select>
+          </div>
+          <div class="space-y-1">
+            <label class="text-xs font-semibold uppercase text-slate-500">Base URL</label>
+            <input id="url" type="text" placeholder="https://api.openai.com/v1" class="flex h-9 w-full rounded-md border border-slate-200 bg-white px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-slate-950"/>
+          </div>
+          <div class="space-y-1">
+            <label class="text-xs font-semibold uppercase text-slate-500">API Key</label>
+            <input id="key" type="password" placeholder="sk-..." class="flex h-9 w-full rounded-md border border-slate-200 bg-white px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-slate-950"/>
+          </div>
+        </div>
+
+        <!-- Advanced Custom Parameters Collapsible -->
+        <details class="border border-slate-100 rounded-lg p-3 bg-slate-50/50 text-sm">
+          <summary class="font-medium text-slate-700 cursor-pointer select-none">Custom Parameters & Prompts</summary>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 pt-3 border-t border-slate-200">
+            <div class="space-y-2">
+              <div>
+                <label class="text-xs font-medium text-slate-600">System Prompt</label>
+                <textarea id="sysPrompt" rows="2" class="w-full text-xs rounded-md border border-slate-200 p-2 focus:outline-none focus:ring-1 focus:ring-slate-950">You are a helpful assistant.</textarea>
+              </div>
+              <div>
+                <label class="text-xs font-medium text-slate-600">User Prompt</label>
+                <textarea id="userPrompt" rows="2" class="w-full text-xs rounded-md border border-slate-200 p-2 focus:outline-none focus:ring-1 focus:ring-slate-950">Reply with exactly: OK</textarea>
+              </div>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <label class="text-xs font-medium text-slate-600">Temperature</label>
+                <input id="temp" type="number" step="0.1" min="0" max="2" value="0.7" class="w-full text-xs rounded-md border border-slate-200 p-2"/>
+              </div>
+              <div>
+                <label class="text-xs font-medium text-slate-600">Top P</label>
+                <input id="topP" type="number" step="0.1" min="0" max="1" value="1.0" class="w-full text-xs rounded-md border border-slate-200 p-2"/>
+              </div>
+              <div>
+                <label class="text-xs font-medium text-slate-600">Max Tokens</label>
+                <input id="maxTokens" type="number" min="1" max="4096" value="128" class="w-full text-xs rounded-md border border-slate-200 p-2"/>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <div class="flex items-center justify-between pt-2">
+          <div class="flex gap-2">
+            <button id="btnLoad" onclick="loadModels()" class="rounded-md text-sm font-medium h-9 px-4 bg-slate-900 text-white hover:bg-slate-800">Load Models</button>
+            <button id="btnTest" onclick="testAll()" disabled class="rounded-md text-sm font-medium h-9 px-4 bg-slate-100 text-slate-900 hover:bg-slate-200 disabled:opacity-50">Test All Models</button>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="exportData('json')" class="text-xs border border-slate-200 rounded-md px-3 py-1.5 hover:bg-slate-100">Export JSON</button>
+            <button onclick="exportData('csv')" class="text-xs border border-slate-200 rounded-md px-3 py-1.5 hover:bg-slate-100">Export CSV</button>
+          </div>
+        </div>
+
+        <div id="err" class="hidden rounded-lg bg-red-50 p-3 text-sm text-red-700 border border-red-200"></div>
+      </div>
+
+      <!-- Models List Card -->
+      <div class="rounded-xl border border-slate-200 bg-white shadow-sm p-6 space-y-4">
+        <div class="flex items-center justify-between border-b pb-4">
+          <div>
+            <h4 class="font-semibold text-slate-900">Models (<span id="count">0</span>)</h4>
+            <div id="summary" class="hidden flex gap-3 text-xs mt-2">
+              <span class="text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-200">Work: <b id="totWork">0</b></span>
+              <span class="text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Limit: <b id="totLimit">0</b></span>
+              <span class="text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-200">Fail: <b id="totFail">0</b></span>
+            </div>
+          </div>
+          <span id="loader" class="hidden text-sm text-slate-500 animate-pulse">Loading...</span>
+        </div>
+
+        <div id="empty" class="text-center py-8 text-sm text-slate-500">No models loaded. Choose a preset or enter endpoint above.</div>
+        <div id="models" class="space-y-6"></div>
+      </div>
+    </div>
+
+    <!-- TAB: COMPARE -->
+    <div id="tabCompare" class="hidden space-y-6">
+      <div class="rounded-xl border border-slate-200 bg-white shadow-sm p-6 space-y-4">
+        <h3 class="font-semibold text-lg">Side-by-Side Model Comparison</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="space-y-2">
+            <label class="text-xs font-semibold text-slate-500">Model A</label>
+            <select id="cmpModelA" class="w-full text-sm border border-slate-200 rounded-md p-2 bg-white"></select>
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs font-semibold text-slate-500">Model B</label>
+            <select id="cmpModelB" class="w-full text-sm border border-slate-200 rounded-md p-2 bg-white"></select>
+          </div>
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-500">Prompt</label>
+          <textarea id="cmpPrompt" rows="3" class="w-full text-sm border border-slate-200 rounded-md p-2" placeholder="Write prompt to compare responses..."></textarea>
+        </div>
+        <button onclick="runComparison()" class="bg-slate-900 text-white text-sm font-medium px-4 py-2 rounded-md hover:bg-slate-800">Run Comparison</button>
+      </div>
+
+      <div id="cmpResults" class="grid grid-cols-1 md:grid-cols-2 gap-6 hidden">
+        <div class="border border-slate-200 bg-white rounded-xl p-4 space-y-2">
+          <h4 id="cmpTitleA" class="font-bold text-sm text-slate-800 border-b pb-2">Model A</h4>
+          <div id="cmpMetaA" class="text-xs font-mono text-slate-500 flex gap-3"></div>
+          <pre id="cmpBodyA" class="bg-slate-50 p-3 rounded text-xs overflow-x-auto whitespace-pre-wrap min-h-[120px] font-mono"></pre>
+        </div>
+        <div class="border border-slate-200 bg-white rounded-xl p-4 space-y-2">
+          <h4 id="cmpTitleB" class="font-bold text-sm text-slate-800 border-b pb-2">Model B</h4>
+          <div id="cmpMetaB" class="text-xs font-mono text-slate-500 flex gap-3"></div>
+          <pre id="cmpBodyB" class="bg-slate-50 p-3 rounded text-xs overflow-x-auto whitespace-pre-wrap min-h-[120px] font-mono"></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: HISTORY -->
+    <div id="tabHistory" class="hidden space-y-6">
+      <div class="rounded-xl border border-slate-200 bg-white shadow-sm p-6 space-y-4">
+        <div class="flex justify-between items-center">
+          <h3 class="font-semibold text-lg">Call & Test History</h3>
+          <button onclick="clearHistory()" class="text-xs text-red-600 border border-red-200 rounded px-2.5 py-1 hover:bg-red-50">Clear History</button>
+        </div>
+        <div id="historyList" class="space-y-3 divide-y divide-slate-100"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let MODELS = [];
+    let STATUS = {};
+    let TEST_RESULTS = [];
+    const $ = id => document.getElementById(id);
+    const safeId = s => btoa(unescape(encodeURIComponent(s))).replace(/[^a-zA-Z0-9]/g, '');
+
+    const PRESETS = {
+      openrouter: 'https://openrouter.ai/api/v1',
+      groq: 'https://api.groq.com/openai/v1',
+      together: 'https://api.together.xyz/v1',
+      ollama: 'http://localhost:11434/v1',
+      lmstudio: 'http://localhost:1234/v1',
+      vllm: 'http://localhost:8000/v1',
+      anthropic: 'https://api.anthropic.com',
+      gemini: 'https://generativelanguage.googleapis.com'
+    };
+
+    function applyPreset() {
+      const p = $('preset').value;
+      if (PRESETS[p]) $('url').value = PRESETS[p];
+    }
+
+    function switchTab(tab) {
+      ['tester', 'compare', 'history'].forEach(t => {
+        const isTarget = (t === tab);
+        const el = $('tab' + t.charAt(0).toUpperCase() + t.slice(1));
+        if (el) el.classList.toggle('hidden', !isTarget);
+
+        const btn = $('tabBtn' + t.charAt(0).toUpperCase() + t.slice(1));
+        if (btn) {
+          btn.className = isTarget
+            ? 'px-3 py-1.5 text-sm font-medium rounded-md bg-slate-900 text-white'
+            : 'px-3 py-1.5 text-sm font-medium rounded-md bg-slate-100 text-slate-700 hover:bg-slate-200';
+        }
+      });
+      if (tab === 'history') renderHistory();
+      if (tab === 'compare') populateCompareSelects();
+    }
+
+    function saveHistory(item) {
+      const hist = JSON.parse(localStorage.getItem('model_tester_history') || '[]');
+      item.timestamp = new Date().toISOString();
+      hist.unshift(item);
+      localStorage.setItem('model_tester_history', JSON.stringify(hist.slice(0, 50)));
+    }
+
+    function renderHistory() {
+      const hist = JSON.parse(localStorage.getItem('model_tester_history') || '[]');
+      const container = $('historyList');
+      if (!container) return;
+      if (!hist.length) {
+        container.innerHTML = '<div class="text-center py-6 text-sm text-slate-400">No test history recorded yet.</div>';
+        return;
+      }
+      container.innerHTML = hist.map((h, idx) => {
+        const m = h.metrics ? `<div class="text-slate-600 font-mono mt-1">TTFT: ${h.metrics.ttft}ms | Latency: ${h.metrics.latency}ms | ${h.metrics.tps} t/s</div>` : '';
+        return `<div class="pt-3 flex justify-between items-start text-xs space-y-1">
+          <div>
+            <div class="font-mono text-slate-800 font-semibold">${h.model || 'General Test'}</div>
+            <div class="text-slate-500">${h.url || ''} &bull; ${new Date(h.timestamp).toLocaleString()}</div>
+            ${m}
+          </div>
+          <button onclick="recallHistory(${idx})" class="border border-slate-200 rounded px-2 py-1 hover:bg-slate-100 text-slate-700">Recall Config</button>
+        </div>`;
+      }).join('');
+    }
+
+    function recallHistory(idx) {
+      const hist = JSON.parse(localStorage.getItem('model_tester_history') || '[]');
+      const item = hist[idx];
+      if (!item) return;
+      $('url').value = item.url || '';
+      $('preset').value = item.preset || 'custom';
+      switchTab('tester');
+    }
+
+    function clearHistory() {
+      localStorage.removeItem('model_tester_history');
+      renderHistory();
+    }
+
+    function populateCompareSelects() {
+      const selA = $('cmpModelA');
+      const selB = $('cmpModelB');
+      if (!selA || !selB) return;
+      const opts = MODELS.length ? MODELS.map(m => `<option value="${m}">${m}</option>`).join('') : '<option value="">Load models first</option>';
+      selA.innerHTML = opts;
+      selB.innerHTML = opts;
+      if (MODELS.length > 1) selB.selectedIndex = 1;
+    }
+
+    function getProvider(m) {
+      return m.includes('/') ? m.split('/')[0] : 'Other';
+    }
+
+    function updateSummary() {
+      let w = 0, l = 0, f = 0;
+      Object.keys(STATUS).forEach(k => {
+        const s = STATUS[k];
+        if (s === 'ok') w++;
+        else if (s === 'limit') l++;
+        else if (s === 'fail') f++;
+      });
+      if ($('totWork')) $('totWork').textContent = w;
+      if ($('totLimit')) $('totLimit').textContent = l;
+      if ($('totFail')) $('totFail').textContent = f;
+      if ($('summary')) $('summary').classList.remove('hidden');
+    }
+
+    async function loadModels() {
+      let targetUrl = $('url').value.trim();
+      const presetVal = $('preset').value;
+
+      if (!targetUrl && PRESETS[presetVal]) {
+        targetUrl = PRESETS[presetVal];
+        $('url').value = targetUrl;
+      }
+
+      if (!targetUrl) {
+        $('err').textContent = 'Please enter a Base URL or select a Provider Preset.';
+        $('err').classList.remove('hidden');
+        return;
+      }
+
+      $('err').classList.add('hidden');
+      $('btnTest').disabled = true;
+      $('loader').classList.remove('hidden');
+      $('models').innerHTML = '';
+      $('empty').classList.remove('hidden');
+      $('empty').textContent = 'Fetching models...';
+      STATUS = {};
+      TEST_RESULTS = [];
+      $('summary').classList.add('hidden');
+
+      try {
+        const res = await fetch('/api/models', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({url: targetUrl, key: $('key').value, preset: presetVal})
+        });
+        const d = await res.json();
+        $('loader').classList.add('hidden');
+
+        if (d.error) {
+          $('err').textContent = d.error;
+          $('err').classList.remove('hidden');
+          $('empty').textContent = 'Failed to load models.';
+          return;
+        }
+
+        MODELS = d.models || [];
+        $('count').textContent = MODELS.length;
+
+        if (!MODELS.length) {
+          $('empty').textContent = 'No models found for this endpoint.';
+          return;
+        }
+
+        $('empty').classList.add('hidden');
+        populateCompareSelects();
+
+        const groups = {};
+        MODELS.forEach(m => {
+          const p = getProvider(m);
+          if (!groups[p]) groups[p] = [];
+          groups[p].push(m);
+        });
+
+        $('models').innerHTML = Object.keys(groups).map(p => {
+          const list = groups[p].map(m => {
+            const sid = safeId(m);
+            return `<div class="flex items-center justify-between py-2 text-sm">
+              <div class="flex items-center gap-2">
+                <span class="font-mono text-slate-700">${m}</span>
+                <button onclick="copyId('${m}', this)" class="text-xs text-slate-400 hover:text-slate-700 border border-slate-200 rounded px-1.5 py-0.5">Copy</button>
+              </div>
+              <div id="st-${sid}" class="flex items-center gap-2">
+                <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">Untested</span>
+                <button onclick="testCompat('${m}')" id="cmp-${sid}" class="ml-1 rounded text-xs font-medium h-7 px-2 bg-slate-100 hover:bg-slate-200">Compat</button>
+              </div>
+            </div>`;
+          }).join('');
+
+          return `<div class="border border-slate-200 rounded-lg p-4 bg-slate-50/50 space-y-2">
+            <div class="flex items-center justify-between border-b pb-2 border-slate-200">
+              <h5 class="font-bold text-sm text-slate-800 uppercase tracking-wider">${p} (${groups[p].length})</h5>
+            </div>
+            <div class="divide-y divide-slate-100 bg-white rounded-md p-2 border border-slate-100">${list}</div>
+          </div>`;
+        }).join('');
+
+        $('btnTest').disabled = false;
+      } catch(e) {
+        $('loader').classList.add('hidden');
+        $('err').textContent = 'Network error fetching models: ' + e.message;
+        $('err').classList.remove('hidden');
+      }
+    }
+
+    async function copyId(id, btn) {
+      await navigator.clipboard.writeText(id);
+      const prev = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = prev; }, 1500);
+    }
+
+    async function testOne(m) {
+      const sid = safeId(m);
+      const target = $('st-' + sid);
+      if (!target) return;
+
+      target.innerHTML = '<span class="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700 animate-pulse">Testing...</span>';
+
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            url: $('url').value,
+            key: $('key').value,
+            preset: $('preset').value,
+            model: m,
+            sysPrompt: $('sysPrompt').value,
+            userPrompt: $('userPrompt').value,
+            temp: parseFloat($('temp').value),
+            topP: parseFloat($('topP').value),
+            maxTokens: parseInt($('maxTokens').value)
+          })
+        });
+        const d = await res.json();
+        const cmpBtn = `<button onclick="testCompat('${m}')" id="cmp-${sid}" class="ml-1 rounded text-xs font-medium h-7 px-2 bg-slate-100 hover:bg-slate-200">Compat</button>`;
+        const metricsHtml = d.metrics ? `<span class="text-xs text-slate-400 font-mono" title="TTFT: ${d.metrics.ttft}ms | ${d.metrics.tps} t/s">${d.metrics.latency}ms</span>` : '';
+
+        let badge = '';
+        if (d.error) {
+          STATUS[m] = 'fail';
+          badge = `<span class="inline-flex items-center rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-700 border border-red-200" title="${d.error}">Failed</span>`;
+        } else if (d.reply && d.reply.includes("prevent abuse of free resources")) {
+          STATUS[m] = 'limit';
+          badge = '<span class="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700 border border-amber-200">Limit Exceeded</span>';
+        } else {
+          STATUS[m] = 'ok';
+          badge = '<span class="inline-flex items-center rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-semibold text-green-700 border border-green-200">Work (OK)</span>';
+        }
+
+        target.innerHTML = `${badge} ${metricsHtml} ${cmpBtn}`;
+        updateSummary();
+
+        const record = { model: m, url: $('url').value, preset: $('preset').value, status: STATUS[m], metrics: d.metrics };
+        TEST_RESULTS.push(record);
+        saveHistory(record);
+      } catch(e) {
+        STATUS[m] = 'fail';
+        target.innerHTML = '<span class="inline-flex items-center rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-700">Error</span>';
+        updateSummary();
+      }
+    }
+
+    async function testAll() {
+      $('btnTest').disabled = true;
+      const CONCURRENCY = 5;
+      for (let i = 0; i < MODELS.length; i += CONCURRENCY) {
+        const batch = MODELS.slice(i, i + CONCURRENCY);
+        await Promise.all(batch.map(m => testOne(m)));
+      }
+      $('btnTest').disabled = false;
+    }
+
+    const FEATS = ["chat", "tools", "json", "stream", "vision"];
+    const LABEL = {chat: "Chat", tools: "Tools", json: "JSON", stream: "Stream", vision: "Vision"};
+
+    async function testCompat(m) {
+      const sid = safeId(m);
+      const btn = $('cmp-' + sid);
+      if (btn) { btn.disabled = true; btn.textContent = 'Testing...'; }
+      try {
+        const res = await fetch('/api/compat', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({url: $('url').value, key: $('key').value, preset: $('preset').value, model: m, features: FEATS})
+        });
+        const d = await res.json();
+        const r = d.result || {};
+        const chips = FEATS.map(f => {
+          const s = r[f] || 'fail';
+          const cls = s === 'ok' ? 'bg-green-50 text-green-700 border-green-200'
+                    : s === 'limit' ? 'bg-amber-50 text-amber-700 border-amber-200'
+                    : 'bg-red-50 text-red-700 border-red-200';
+          return `<span class="inline-flex items-center rounded-full ${cls} border px-2 py-0.5 text-[10px] font-semibold">${LABEL[f]}: ${s.toUpperCase()}</span>`;
+        }).join('');
+        const target = $('st-' + sid);
+        if (target) target.innerHTML = chips;
+      } catch(e) {
+        const target = $('st-' + sid);
+        if (target) target.innerHTML = '<span class="inline-flex items-center rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-700 border border-red-200">Error</span>';
+      }
+    }
+
+    async function runComparison() {
+      const mA = $('cmpModelA').value;
+      const mB = $('cmpModelB').value;
+      const prompt = $('cmpPrompt').value || 'Hello, summarize AI in 1 sentence.';
+
+      if (!mA || !mB) return alert('Select two models to compare');
+
+      $('cmpResults').classList.remove('hidden');
+      $('cmpTitleA').textContent = mA;
+      $('cmpTitleB').textContent = mB;
+      $('cmpBodyA').textContent = 'Generating response...';
+      $('cmpBodyB').textContent = 'Generating response...';
+
+      const exec = async (m) => {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            url: $('url').value,
+            key: $('key').value,
+            preset: $('preset').value,
+            model: m,
+            userPrompt: prompt
+          })
+        });
+        return await res.json();
+      };
+
+      const resA = await exec(mA);
+      const resB = await exec(mB);
+
+      $('cmpBodyA').textContent = resA.reply || resA.error || 'No output';
+      $('cmpMetaA').textContent = resA.metrics ? `TTFT: ${resA.metrics.ttft}ms | Latency: ${resA.metrics.latency}ms | ${resA.metrics.tps} t/s` : '';
+
+      $('cmpBodyB').textContent = resB.reply || resB.error || 'No output';
+      $('cmpMetaB').textContent = resB.metrics ? `TTFT: ${resB.metrics.ttft}ms | Latency: ${resB.metrics.latency}ms | ${resB.metrics.tps} t/s` : '';
+    }
+
+    function exportData(format) {
+      if (!TEST_RESULTS.length) return alert('No test results to export');
+
+      let dataStr = '', mime = '', ext = '';
+      if (format === 'json') {
+        dataStr = JSON.stringify(TEST_RESULTS, null, 2);
+        mime = 'application/json';
+        ext = 'json';
+      } else {
+        const header = ['Model', 'URL', 'Status', 'TTFT_ms', 'Latency_ms', 'TokensPerSec'];
+        const rows = TEST_RESULTS.map(r => {
+          const m = r.metrics || {};
+          return [r.model, r.url, r.status, m.ttft || '', m.latency || '', m.tps || ''].map(v => `"${v}"`).join(',');
+        });
+        dataStr = [header.join(',')].concat(rows).join('\n');
+        mime = 'text/csv';
+        ext = 'csv';
+      }
+
+      const blob = new Blob([dataStr], { type: mime });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `model_test_results.${ext}`;
+      link.click();
+    }
+  </script>
+</body>
+</html>

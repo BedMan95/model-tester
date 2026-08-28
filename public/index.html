@@ -272,6 +272,23 @@
       if ($('totLimit')) $('totLimit').textContent = l;
       if ($('totFail')) $('totFail').textContent = f;
       if ($('summary')) $('summary').classList.remove('hidden');
+
+      // Update per category counter
+      Object.keys(MODEL_GROUPS).forEach(p => {
+        let cw = 0, cl = 0, cf = 0;
+        MODEL_GROUPS[p].forEach(m => {
+          const s = STATUS[m];
+          if (s === 'ok') cw++;
+          else if (s === 'limit') cl++;
+          else if (s === 'fail') cf++;
+        });
+        const catWork = $('catWork-' + safeId(p));
+        const catLimit = $('catLimit-' + safeId(p));
+        const catFail = $('catFail-' + safeId(p));
+        if (catWork) catWork.textContent = cw;
+        if (catLimit) catLimit.textContent = cl;
+        if (catFail) catFail.textContent = cf;
+      });
     }
 
     async function loadModels() {
@@ -334,6 +351,7 @@
         });
 
         $('models').innerHTML = Object.keys(MODEL_GROUPS).map(p => {
+          const catId = safeId(p);
           const list = MODEL_GROUPS[p].map(m => {
             const sid = safeId(m);
             return `<div class="flex items-center justify-between py-2 text-sm">
@@ -350,7 +368,14 @@
 
           return `<div class="border border-slate-200 rounded-lg p-4 bg-slate-50/50 space-y-2">
             <div class="flex items-center justify-between border-b pb-2 border-slate-200">
-              <h5 class="font-bold text-sm text-slate-800 uppercase tracking-wider">${p} (${MODEL_GROUPS[p].length})</h5>
+              <div class="flex items-center gap-3">
+                <h5 class="font-bold text-sm text-slate-800 uppercase tracking-wider">${p} (${MODEL_GROUPS[p].length})</h5>
+                <div class="flex gap-1 text-[11px]">
+                  <span class="text-green-700 bg-green-50 px-1.5 py-0.5 rounded border border-green-200">W: <b id="catWork-${catId}">0</b></span>
+                  <span class="text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">L: <b id="catLimit-${catId}">0</b></span>
+                  <span class="text-red-700 bg-red-50 px-1.5 py-0.5 rounded border border-red-200">F: <b id="catFail-${catId}">0</b></span>
+                </div>
+              </div>
               <button onclick="testCategory('${p}')" class="text-xs font-medium px-2 py-1 rounded bg-slate-900 text-white hover:bg-slate-800">Test Category</button>
             </div>
             <div class="divide-y divide-slate-100 bg-white rounded-md p-2 border border-slate-100">${list}</div>

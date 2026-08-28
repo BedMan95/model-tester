@@ -80,15 +80,17 @@ app.post('/api/chat', async (req, res) => {
 
     // Standard OpenAI API Handler with TTFT calculation
     const client = new OpenAI({ apiKey: key || 'dummy', baseURL: url, timeout });
+    const formattedMessages = req.body.messages || [
+      { role: 'system', content: sysPrompt || 'You are a helpful assistant.' },
+      { role: 'user', content: userPrompt || 'Reply with exactly: OK' }
+    ];
+
     const stream = await client.chat.completions.create({
       model,
-      messages: [
-        { role: 'system', content: sysPrompt || 'You are a helpful assistant.' },
-        { role: 'user', content: userPrompt || 'Reply with exactly: OK' }
-      ],
+      messages: formattedMessages,
       temperature: temp ?? 0.7,
       top_p: topP ?? 1.0,
-      max_tokens: maxTokens || 128,
+      max_tokens: maxTokens || 512,
       stream: true
     });
 

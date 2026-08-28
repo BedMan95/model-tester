@@ -26,10 +26,13 @@
   <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
   <style>
     /* Dark & Light Mode overrides for Tom-Select */
-    .ts-dropdown {
-      z-index: 50 !important;
+    .ts-control {
       border-radius: 0.5rem !important;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3) !important;
+      padding: 0.375rem 0.75rem !important;
+      height: 2.25rem !important;
+      display: flex !important;
+      align-items: center !important;
+      font-size: 0.875rem !important;
     }
     .dark .ts-control {
       background-color: #18181b !important;
@@ -52,23 +55,55 @@
       background-color: #27272a !important;
       color: #ffffff !important;
     }
+    .ts-dropdown {
+      z-index: 50 !important;
+      border-radius: 0.5rem !important;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3) !important;
+    }
+    /* Custom Slim Scrollbar Dark/Light Mode */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background-color: #d4d4d8;
+      border-radius: 9999px;
+    }
+    .dark ::-webkit-scrollbar-thumb {
+      background-color: #27272a;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background-color: #a1a1aa;
+    }
+    .dark ::-webkit-scrollbar-thumb:hover {
+      background-color: #3f3f46;
+    }
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: #d4d4d8 transparent;
+    }
+    .dark * {
+      scrollbar-color: #27272a transparent;
+    }
   </style>
 </head>
-<body class="bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 antialiased min-h-screen p-4 md:p-6 transition-colors duration-200">
-  <div class="max-w-6xl mx-auto space-y-6">
+<body class="bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 antialiased h-screen overflow-hidden flex flex-col transition-colors duration-200">
 
-    <!-- Header & Nav Tabs -->
-    <div class="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-4 gap-4">
+  <!-- Sticky Header -->
+  <header class="sticky top-0 z-40 shrink-0 bg-zinc-50/90 dark:bg-zinc-950/90 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 px-4 md:px-6 py-3">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
       <div class="flex items-center gap-3">
-        <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        <div class="h-9 w-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-zinc-900 via-indigo-950 to-zinc-700 dark:from-white dark:via-zinc-200 dark:to-zinc-400 bg-clip-text text-transparent">AI Model Tester Studio</h1>
+            <h1 class="text-lg font-bold tracking-tight bg-gradient-to-r from-zinc-900 via-indigo-950 to-zinc-700 dark:from-white dark:via-zinc-200 dark:to-zinc-400 bg-clip-text text-transparent">AI Model Tester Studio</h1>
             <span class="inline-flex items-center rounded-full bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">PRO v2.0</span>
           </div>
-          <p class="text-xs text-zinc-500 dark:text-zinc-400">Enterprise AI Model Benchmarking, Multi-turn Studio & Compatibility Engine</p>
         </div>
       </div>
 
@@ -88,204 +123,210 @@
         </button>
       </div>
     </div>
+  </header>
 
-    <!-- TAB: TESTER -->
-    <div id="tabTester" class="space-y-6">
-      <!-- Config Card -->
-      <div class="relative z-30 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-900/50 backdrop-blur-md shadow-xl p-6 space-y-4">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="space-y-1">
-            <label class="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Provider Preset</label>
-            <select id="preset" onchange="applyPreset()" class="w-full">
-              <option value="custom">⚡ Custom Endpoint</option>
-              <option value="openrouter">🌐 OpenRouter API</option>
-              <option value="groq">🚀 Groq Cloud</option>
-              <option value="together">🤝 Together AI</option>
-              <option value="ollama">🦙 Ollama Local</option>
-              <option value="lmstudio">💻 LM Studio Local</option>
-              <option value="vllm">⚙️ vLLM / LocalAI</option>
-              <option value="anthropic">🧠 Anthropic Claude</option>
-              <option value="gemini">✨ Google Gemini</option>
-            </select>
-          </div>
-          <div class="space-y-1">
-            <label class="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Base URL</label>
-            <input id="url" type="text" oninput="saveCredentials()" placeholder="https://api.openai.com/v1" class="flex h-9 w-full rounded-lg border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 text-zinc-900 dark:text-zinc-100"/>
-          </div>
-          <div class="space-y-1">
-            <label class="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">API Key</label>
-            <input id="key" type="password" oninput="saveCredentials()" placeholder="sk-..." class="flex h-9 w-full rounded-lg border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 text-zinc-900 dark:text-zinc-100"/>
-          </div>
-        </div>
+  <!-- Main Content Container -->
+  <main class="flex-1 min-h-0 p-3 md:p-4 flex flex-col overflow-hidden">
+    <div class="max-w-6xl mx-auto w-full flex-1 min-h-0 flex flex-col">
 
-        <!-- Advanced Custom Parameters Collapsible -->
-        <details class="border border-zinc-200/60 dark:border-zinc-800/60 rounded-xl p-3 bg-zinc-50/50 dark:bg-zinc-900/30 text-sm">
-          <summary class="font-medium text-zinc-700 dark:text-zinc-300 cursor-pointer select-none">Custom Parameters & Prompts</summary>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 pt-3 border-t border-zinc-200 dark:border-zinc-800">
-            <div class="space-y-2">
-              <div>
-                <label class="text-xs font-medium text-zinc-600 dark:text-zinc-400">System Prompt</label>
-                <textarea id="sysPrompt" rows="2" class="w-full text-xs rounded-lg border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-2 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-indigo-500">You are a helpful assistant.</textarea>
-              </div>
-              <div>
-                <label class="text-xs font-medium text-zinc-600 dark:text-zinc-400">User Prompt</label>
-                <textarea id="userPrompt" rows="2" class="w-full text-xs rounded-lg border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-2 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-indigo-500">Reply with exactly: OK</textarea>
-              </div>
+      <!-- TAB: TESTER -->
+      <div id="tabTester" class="flex-1 h-full flex flex-col min-h-0 space-y-4">
+        <!-- Config Card -->
+        <div class="relative z-30 shrink-0 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-900/50 backdrop-blur-md shadow-xl p-5 space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="space-y-1">
+              <label class="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Provider Preset</label>
+              <select id="preset" onchange="applyPreset()" class="w-full">
+                <option value="custom">⚡ Custom Endpoint</option>
+                <option value="openrouter">🌐 OpenRouter API</option>
+                <option value="groq">🚀 Groq Cloud</option>
+                <option value="together">🤝 Together AI</option>
+                <option value="ollama">🦙 Ollama Local</option>
+                <option value="lmstudio">💻 LM Studio Local</option>
+                <option value="vllm">⚙️ vLLM / LocalAI</option>
+                <option value="anthropic">🧠 Anthropic Claude</option>
+                <option value="gemini">✨ Google Gemini</option>
+              </select>
             </div>
-            <div class="space-y-3">
-              <div class="grid grid-cols-3 gap-2">
+            <div class="space-y-1">
+              <label class="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Base URL</label>
+              <input id="url" type="text" oninput="saveCredentials()" placeholder="https://api.openai.com/v1" class="flex h-9 w-full rounded-lg border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 text-zinc-900 dark:text-zinc-100"/>
+            </div>
+            <div class="space-y-1">
+              <label class="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">API Key</label>
+              <input id="key" type="password" oninput="saveCredentials()" placeholder="sk-..." class="flex h-9 w-full rounded-lg border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 text-zinc-900 dark:text-zinc-100"/>
+            </div>
+          </div>
+
+          <!-- Advanced Custom Parameters Collapsible -->
+          <details class="border border-zinc-200/60 dark:border-zinc-800/60 rounded-xl p-3 bg-zinc-50/50 dark:bg-zinc-900/30 text-sm">
+            <summary class="font-medium text-zinc-700 dark:text-zinc-300 cursor-pointer select-none">Custom Parameters & Prompts</summary>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 pt-3 border-t border-zinc-200 dark:border-zinc-800">
+              <div class="space-y-2">
                 <div>
-                  <label class="text-xs font-medium text-zinc-600 dark:text-zinc-400">Temperature</label>
-                  <input id="temp" type="number" step="0.1" min="0" max="2" value="0.7" class="w-full text-xs rounded-lg border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-2 text-zinc-900 dark:text-zinc-100"/>
+                  <label class="text-xs font-medium text-zinc-600 dark:text-zinc-400">System Prompt</label>
+                  <textarea id="sysPrompt" rows="2" class="w-full text-xs rounded-lg border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-2 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-indigo-500">You are a helpful assistant.</textarea>
                 </div>
                 <div>
-                  <label class="text-xs font-medium text-zinc-600 dark:text-zinc-400">Top P</label>
-                  <input id="topP" type="number" step="0.1" min="0" max="1" value="1.0" class="w-full text-xs rounded-lg border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-2 text-zinc-900 dark:text-zinc-100"/>
-                </div>
-                <div>
-                  <label class="text-xs font-medium text-zinc-600 dark:text-zinc-400">Max Tokens</label>
-                  <input id="maxTokens" type="number" min="1" max="4096" value="128" class="w-full text-xs rounded-lg border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-2 text-zinc-900 dark:text-zinc-100"/>
+                  <label class="text-xs font-medium text-zinc-600 dark:text-zinc-400">User Prompt</label>
+                  <textarea id="userPrompt" rows="2" class="w-full text-xs rounded-lg border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-2 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-indigo-500">Reply with exactly: OK</textarea>
                 </div>
               </div>
-              <div class="grid grid-cols-2 gap-3 pt-1 border-t border-zinc-200 dark:border-zinc-800">
-                <div>
-                  <div class="flex justify-between items-center text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">
-                    <span>Timeout: <b id="timeoutVal">5s</b></span>
+              <div class="space-y-3">
+                <div class="grid grid-cols-3 gap-2">
+                  <div>
+                    <label class="text-xs font-medium text-zinc-600 dark:text-zinc-400">Temperature</label>
+                    <input id="temp" type="number" step="0.1" min="0" max="2" value="0.7" class="w-full text-xs rounded-lg border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-2 text-zinc-900 dark:text-zinc-100"/>
                   </div>
-                  <input id="timeoutSlider" type="range" min="2" max="15" value="5" oninput="$('timeoutVal').textContent=this.value+'s'" class="w-full accent-indigo-600"/>
+                  <div>
+                    <label class="text-xs font-medium text-zinc-600 dark:text-zinc-400">Top P</label>
+                    <input id="topP" type="number" step="0.1" min="0" max="1" value="1.0" class="w-full text-xs rounded-lg border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-2 text-zinc-900 dark:text-zinc-100"/>
+                  </div>
+                  <div>
+                    <label class="text-xs font-medium text-zinc-600 dark:text-zinc-400">Max Tokens</label>
+                    <input id="maxTokens" type="number" min="1" max="16384" value="2048" class="w-full text-xs rounded-lg border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-2 text-zinc-900 dark:text-zinc-100"/>
+                  </div>
                 </div>
-                <div class="flex items-center gap-2 pt-3">
-                  <input id="autoRetry" type="checkbox" class="rounded border-zinc-300 dark:border-zinc-700 text-indigo-600 focus:ring-indigo-500"/>
-                  <label for="autoRetry" class="text-xs font-medium text-zinc-700 dark:text-zinc-300 select-none">Auto-Retry on Limit</label>
+                <div class="grid grid-cols-2 gap-3 pt-1 border-t border-zinc-200 dark:border-zinc-800">
+                  <div>
+                    <div class="flex justify-between items-center text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">
+                      <span>Timeout: <b id="timeoutVal">5s</b></span>
+                    </div>
+                    <input id="timeoutSlider" type="range" min="2" max="15" value="5" oninput="$('timeoutVal').textContent=this.value+'s'" class="w-full accent-indigo-600"/>
+                  </div>
+                  <div class="flex items-center gap-2 pt-3">
+                    <input id="autoRetry" type="checkbox" class="rounded border-zinc-300 dark:border-zinc-700 text-indigo-600 focus:ring-indigo-500"/>
+                    <label for="autoRetry" class="text-xs font-medium text-zinc-700 dark:text-zinc-300 select-none">Auto-Retry on Limit</label>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </details>
+          </details>
 
-        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between pt-2 gap-3">
-          <div class="flex flex-wrap gap-2">
-            <button id="btnLoad" onclick="loadModels()" class="rounded-lg text-xs font-semibold h-9 px-4 bg-indigo-600 text-white hover:bg-indigo-500 shadow-md shadow-indigo-600/20 transition-all">Load Models</button>
-            <button id="btnTest" onclick="testAll()" disabled class="rounded-lg text-xs font-semibold h-9 px-4 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 hover:opacity-90 disabled:opacity-40 transition-all">Test All Models</button>
-            <button id="btnTestSelected" onclick="testSelected()" disabled class="rounded-lg text-xs font-semibold h-9 px-3 border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 transition-all">Test Selected</button>
-          </div>
-          <div class="flex gap-2 self-end sm:self-auto">
-            <button onclick="exportData('json')" class="text-xs border border-zinc-300 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all">Export JSON</button>
-            <button onclick="exportData('csv')" class="text-xs border border-zinc-300 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all">Export CSV</button>
-          </div>
-        </div>
-
-        <div id="err" class="hidden rounded-xl bg-red-50 dark:bg-red-950/40 p-3 text-xs text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900/50"></div>
-      </div>
-
-      <!-- Models List Card -->
-      <div class="rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-900/50 backdrop-blur-md shadow-xl p-6 space-y-4">
-        <div class="flex flex-col md:flex-row md:items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-4 gap-4">
-          <div>
-            <h4 class="font-bold text-zinc-900 dark:text-white">Models (<span id="count">0</span>)</h4>
-            <div id="summary" class="hidden flex flex-wrap gap-2 text-xs mt-2">
-              <span class="text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-900/50 font-medium">Work: <b id="totWork">0</b></span>
-              <span class="text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-2.5 py-0.5 rounded-full border border-amber-200 dark:border-amber-900/50 font-medium">Limit: <b id="totLimit">0</b></span>
-              <span class="text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/50 px-2.5 py-0.5 rounded-full border border-red-200 dark:border-red-900/50 font-medium">Fail: <b id="totFail">0</b></span>
-              <span class="text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 px-2.5 py-0.5 rounded-full border border-zinc-200 dark:border-zinc-700 font-medium">Tokens: <b id="totTokens">0</b></span>
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between pt-2 gap-3">
+            <div class="flex flex-wrap gap-2">
+              <button id="btnLoad" onclick="loadModels()" class="rounded-lg text-xs font-semibold h-9 px-4 bg-indigo-600 text-white hover:bg-indigo-500 shadow-md shadow-indigo-600/20 transition-all">Load Models</button>
+              <button id="btnTest" onclick="testAll()" disabled class="rounded-lg text-xs font-semibold h-9 px-4 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 hover:opacity-90 disabled:opacity-40 transition-all">Test All Models</button>
+              <button id="btnTestSelected" onclick="testSelected()" disabled class="rounded-lg text-xs font-semibold h-9 px-3 border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 transition-all">Test Selected</button>
+            </div>
+            <div class="flex gap-2 self-end sm:self-auto">
+              <button onclick="exportData('json')" class="text-xs border border-zinc-300 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all">Export JSON</button>
+              <button onclick="exportData('csv')" class="text-xs border border-zinc-300 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all">Export CSV</button>
             </div>
           </div>
-          <div class="flex items-center gap-3">
-            <input id="searchModel" type="text" oninput="filterModels()" placeholder="Search models..." class="h-8 text-xs px-3 rounded-lg border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 w-48 focus:ring-2 focus:ring-indigo-500"/>
-            <button onclick="toggleSelectAll()" class="text-xs border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg px-2.5 py-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all">Select All</button>
-            <span id="loader" class="hidden text-xs text-indigo-500 font-semibold animate-pulse">Loading...</span>
-          </div>
+
+          <div id="err" class="hidden rounded-xl bg-red-50 dark:bg-red-950/40 p-3 text-xs text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900/50"></div>
         </div>
 
-        <div id="empty" class="text-center py-10 text-xs text-zinc-500 dark:text-zinc-400">No models loaded. Choose a preset or enter endpoint above.</div>
-        <div id="models" class="space-y-6"></div>
-      </div>
-    </div>
-
-    <!-- TAB: CHAT -->
-    <div id="tabChat" class="hidden space-y-6">
-      <div class="rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-900/50 backdrop-blur-md shadow-xl overflow-hidden flex h-[620px]">
-        <!-- Chat Sessions Sidebar -->
-        <div class="w-64 border-r border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/50 flex flex-col justify-between">
-          <div class="p-3 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Chat Sessions</span>
-            <button onclick="createNewChatSession()" class="text-xs bg-indigo-600 text-white font-semibold px-2.5 py-1 rounded-lg hover:bg-indigo-500 transition-all">+ New</button>
-          </div>
-          <div id="chatSessionList" class="p-2 space-y-1 overflow-y-auto flex-1 text-xs"></div>
-        </div>
-
-        <!-- Active Chat Window -->
-        <div class="flex-1 flex flex-col justify-between bg-white dark:bg-zinc-900/30">
-          <!-- Chat Session Header -->
-          <div class="p-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-900/50">
+        <!-- Models List Card -->
+        <div class="rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-900/50 backdrop-blur-md shadow-xl p-5 space-y-4 flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div class="flex flex-col md:flex-row md:items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-3 shrink-0 gap-4">
+            <div>
+              <h4 class="font-bold text-zinc-900 dark:text-white">Models (<span id="count">0</span>)</h4>
+              <div id="summary" class="hidden flex flex-wrap gap-2 text-xs mt-2">
+                <span class="text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-900/50 font-medium">Work: <b id="totWork">0</b></span>
+                <span class="text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-2.5 py-0.5 rounded-full border border-amber-200 dark:border-amber-900/50 font-medium">Limit: <b id="totLimit">0</b></span>
+                <span class="text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/50 px-2.5 py-0.5 rounded-full border border-red-200 dark:border-red-900/50 font-medium">Fail: <b id="totFail">0</b></span>
+                <span class="text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 px-2.5 py-0.5 rounded-full border border-zinc-200 dark:border-zinc-700 font-medium">Tokens: <b id="totTokens">0</b></span>
+              </div>
+            </div>
             <div class="flex items-center gap-3">
-              <span id="activeChatTitle" class="font-bold text-xs text-zinc-800 dark:text-zinc-200">No session selected</span>
-              <div class="w-56">
-                <select id="chatModelSelect" onchange="updateActiveChatModel(this.value)" class="text-xs font-mono"></select>
-              </div>
+              <input id="searchModel" type="text" oninput="filterModels()" placeholder="Search models..." class="h-8 text-xs px-3 rounded-lg border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 w-48 focus:ring-2 focus:ring-indigo-500"/>
+              <button onclick="toggleSelectAll()" class="text-xs border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg px-2.5 py-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all">Select All</button>
+              <span id="loader" class="hidden text-xs text-indigo-500 font-semibold animate-pulse">Loading...</span>
             </div>
-            <button onclick="deleteCurrentSession()" class="text-xs text-red-600 dark:text-red-400 hover:underline">Delete Session</button>
           </div>
 
-          <!-- Chat Messages Area -->
-          <div id="chatMessages" class="p-4 overflow-y-auto flex-1 space-y-3 text-xs"></div>
+          <div id="empty" class="text-center py-10 text-xs text-zinc-500 dark:text-zinc-400">No models loaded. Choose a preset or enter endpoint above.</div>
+          <div id="models" class="flex-1 overflow-y-auto min-h-0 pr-1 space-y-6"></div>
+        </div>
+      </div>
 
-          <!-- Chat Input Controls -->
-          <div class="p-3 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 flex gap-2">
-            <input id="chatInput" type="text" onkeydown="if(event.key==='Enter') sendChatMessage()" placeholder="Ask anything..." class="flex-1 text-xs border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500"/>
-            <button onclick="sendChatMessage()" class="bg-indigo-600 text-white font-semibold px-4 py-2 text-xs rounded-lg hover:bg-indigo-500 transition-all shadow-md shadow-indigo-600/20">Send</button>
+      <!-- TAB: CHAT -->
+      <div id="tabChat" class="hidden flex-1 h-full flex flex-col">
+        <div class="rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-900/50 backdrop-blur-md shadow-xl overflow-hidden flex flex-1 h-full">
+          <!-- Chat Sessions Sidebar -->
+          <div class="w-64 border-r border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/50 flex flex-col justify-between">
+            <div class="p-3 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Chat Sessions</span>
+              <button onclick="createNewChatSession()" class="text-xs bg-indigo-600 text-white font-semibold px-2.5 py-1 rounded-lg hover:bg-indigo-500 transition-all">+ New</button>
+            </div>
+            <div id="chatSessionList" class="p-2 space-y-1 overflow-y-auto flex-1 text-xs"></div>
+          </div>
+
+          <!-- Active Chat Window -->
+          <div class="flex-1 flex flex-col justify-between bg-white dark:bg-zinc-900/30">
+            <!-- Chat Session Header -->
+            <div class="p-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-900/50">
+              <div class="flex items-center gap-3">
+                <span id="activeChatTitle" class="font-bold text-xs text-zinc-800 dark:text-zinc-200">No session selected</span>
+                <div class="w-56">
+                  <select id="chatModelSelect" onchange="updateActiveChatModel(this.value)" class="text-xs font-mono"></select>
+                </div>
+              </div>
+              <button onclick="deleteCurrentSession()" class="text-xs text-red-600 dark:text-red-400 hover:underline">Delete Session</button>
+            </div>
+
+            <!-- Chat Messages Area -->
+            <div id="chatMessages" class="p-4 overflow-y-auto flex-1 space-y-3 text-xs"></div>
+
+            <!-- Chat Input Controls -->
+            <div class="p-3 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 flex gap-2">
+              <input id="chatInput" type="text" onkeydown="if(event.key==='Enter') sendChatMessage()" placeholder="Ask anything..." class="flex-1 text-xs border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500"/>
+              <button onclick="sendChatMessage()" class="bg-indigo-600 text-white font-semibold px-4 py-2 text-xs rounded-lg hover:bg-indigo-500 transition-all shadow-md shadow-indigo-600/20">Send</button>
+            </div>
           </div>
         </div>
       </div>
+
+      <!-- TAB: COMPARE -->
+      <div id="tabCompare" class="hidden flex-1 h-full overflow-y-auto space-y-6">
+        <div class="rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-900/50 backdrop-blur-md shadow-xl p-6 space-y-4">
+          <h3 class="font-bold text-base text-zinc-900 dark:text-white">Side-by-Side Model Comparison</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <label class="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Model A</label>
+              <select id="cmpModelA" class="w-full text-xs"></select>
+            </div>
+            <div class="space-y-2">
+              <label class="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Model B</label>
+              <select id="cmpModelB" class="w-full text-xs"></select>
+            </div>
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Prompt</label>
+            <textarea id="cmpPrompt" rows="3" class="w-full text-xs border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500" placeholder="Write prompt to compare responses..."></textarea>
+          </div>
+          <button onclick="runComparison()" class="bg-indigo-600 text-white text-xs font-semibold px-4 py-2 rounded-lg hover:bg-indigo-500 shadow-md shadow-indigo-600/20 transition-all">Run Comparison</button>
+        </div>
+
+        <div id="cmpResults" class="grid grid-cols-1 md:grid-cols-2 gap-6 hidden">
+          <div class="border border-zinc-200/80 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-900/50 rounded-2xl p-4 space-y-2">
+            <h4 id="cmpTitleA" class="font-bold text-xs text-zinc-800 dark:text-zinc-200 border-b border-zinc-200 dark:border-zinc-800 pb-2">Model A</h4>
+            <div id="cmpMetaA" class="text-[10px] font-mono text-zinc-500 dark:text-zinc-400 flex gap-3"></div>
+            <pre id="cmpBodyA" class="bg-zinc-50 dark:bg-zinc-950 p-3 rounded-lg text-xs overflow-x-auto whitespace-pre-wrap min-h-[120px] font-mono text-zinc-800 dark:text-zinc-200"></pre>
+          </div>
+          <div class="border border-zinc-200/80 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-900/50 rounded-2xl p-4 space-y-2">
+            <h4 id="cmpTitleB" class="font-bold text-xs text-zinc-800 dark:text-zinc-200 border-b border-zinc-200 dark:border-zinc-800 pb-2">Model B</h4>
+            <div id="cmpMetaB" class="text-[10px] font-mono text-zinc-500 dark:text-zinc-400 flex gap-3"></div>
+            <pre id="cmpBodyB" class="bg-zinc-50 dark:bg-zinc-950 p-3 rounded-lg text-xs overflow-x-auto whitespace-pre-wrap min-h-[120px] font-mono text-zinc-800 dark:text-zinc-200"></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: HISTORY -->
+      <div id="tabHistory" class="hidden flex-1 h-full overflow-y-auto space-y-6">
+        <div class="rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-900/50 backdrop-blur-md shadow-xl p-6 space-y-4">
+          <div class="flex justify-between items-center">
+            <h3 class="font-bold text-base text-zinc-900 dark:text-white">Call & Test History</h3>
+            <button onclick="clearHistory()" class="text-xs text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/50 rounded-lg px-3 py-1 hover:bg-red-50 dark:hover:bg-red-950/40 transition-all">Clear History</button>
+          </div>
+          <div id="historyList" class="space-y-3 divide-y divide-zinc-100 dark:divide-zinc-800/60"></div>
+        </div>
+      </div>
+
     </div>
-
-    <!-- TAB: COMPARE -->
-    <div id="tabCompare" class="hidden space-y-6">
-      <div class="rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-900/50 backdrop-blur-md shadow-xl p-6 space-y-4">
-        <h3 class="font-bold text-base text-zinc-900 dark:text-white">Side-by-Side Model Comparison</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="space-y-2">
-            <label class="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Model A</label>
-            <select id="cmpModelA" class="w-full text-xs"></select>
-          </div>
-          <div class="space-y-2">
-            <label class="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Model B</label>
-            <select id="cmpModelB" class="w-full text-xs"></select>
-          </div>
-        </div>
-        <div>
-          <label class="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Prompt</label>
-          <textarea id="cmpPrompt" rows="3" class="w-full text-xs border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500" placeholder="Write prompt to compare responses..."></textarea>
-        </div>
-        <button onclick="runComparison()" class="bg-indigo-600 text-white text-xs font-semibold px-4 py-2 rounded-lg hover:bg-indigo-500 shadow-md shadow-indigo-600/20 transition-all">Run Comparison</button>
-      </div>
-
-      <div id="cmpResults" class="grid grid-cols-1 md:grid-cols-2 gap-6 hidden">
-        <div class="border border-zinc-200/80 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-900/50 rounded-2xl p-4 space-y-2">
-          <h4 id="cmpTitleA" class="font-bold text-xs text-zinc-800 dark:text-zinc-200 border-b border-zinc-200 dark:border-zinc-800 pb-2">Model A</h4>
-          <div id="cmpMetaA" class="text-[10px] font-mono text-zinc-500 dark:text-zinc-400 flex gap-3"></div>
-          <pre id="cmpBodyA" class="bg-zinc-50 dark:bg-zinc-950 p-3 rounded-lg text-xs overflow-x-auto whitespace-pre-wrap min-h-[120px] font-mono text-zinc-800 dark:text-zinc-200"></pre>
-        </div>
-        <div class="border border-zinc-200/80 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-900/50 rounded-2xl p-4 space-y-2">
-          <h4 id="cmpTitleB" class="font-bold text-xs text-zinc-800 dark:text-zinc-200 border-b border-zinc-200 dark:border-zinc-800 pb-2">Model B</h4>
-          <div id="cmpMetaB" class="text-[10px] font-mono text-zinc-500 dark:text-zinc-400 flex gap-3"></div>
-          <pre id="cmpBodyB" class="bg-zinc-50 dark:bg-zinc-950 p-3 rounded-lg text-xs overflow-x-auto whitespace-pre-wrap min-h-[120px] font-mono text-zinc-800 dark:text-zinc-200"></pre>
-        </div>
-      </div>
-    </div>
-
-    <!-- TAB: HISTORY -->
-    <div id="tabHistory" class="hidden space-y-6">
-      <div class="rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-900/50 backdrop-blur-md shadow-xl p-6 space-y-4">
-        <div class="flex justify-between items-center">
-          <h3 class="font-bold text-base text-zinc-900 dark:text-white">Call & Test History</h3>
-          <button onclick="clearHistory()" class="text-xs text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/50 rounded-lg px-3 py-1 hover:bg-red-50 dark:hover:bg-red-950/40 transition-all">Clear History</button>
-        </div>
-        <div id="historyList" class="space-y-3 divide-y divide-zinc-100 dark:divide-zinc-800/60"></div>
-      </div>
-    </div>
-
-  </div>
+  </main>
 
   <script>
     let MODELS = [];
@@ -346,7 +387,7 @@
       if (!ts) return;
       ts.clearOptions();
       ts.addOptions(options.map(o => typeof o === 'string' ? {value: o, text: o} : o));
-      if (selectedVal) ts.setValue(selectedVal);
+      if (selectedVal) ts.setValue(selectedVal, true);
     }
 
     function saveCredentials() {
@@ -478,7 +519,7 @@
       if (!ACTIVE_SESSION_ID || !newModel) return;
       let sessions = getChatSessions();
       let active = sessions.find(s => s.id === ACTIVE_SESSION_ID);
-      if (!active) return;
+      if (!active || active.model === newModel) return;
       active.model = newModel;
       saveChatSessions(sessions);
       renderChatSessions();
@@ -507,8 +548,10 @@
       renderActiveChat();
 
       const msgBox = $('chatMessages');
-      msgBox.innerHTML += `<div class="flex flex-col items-start"><span class="text-[10px] text-zinc-400 mb-0.5">assistant</span><div class="bg-zinc-100 dark:bg-zinc-900 text-zinc-500 rounded-xl px-3 py-2 text-xs animate-pulse border border-zinc-200 dark:border-zinc-800">Thinking...</div></div>`;
+      const streamBubbleId = 'stream-' + Date.now();
+      msgBox.innerHTML += `<div class="flex flex-col items-start"><span class="text-[10px] text-zinc-400 mb-0.5">assistant</span><div id="${streamBubbleId}" class="max-w-[80%] rounded-xl px-3 py-2 text-xs font-mono whitespace-pre-wrap bg-zinc-100 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-800"></div></div>`;
       msgBox.scrollTop = msgBox.scrollHeight;
+      const bubbleEl = $(streamBubbleId);
 
       try {
         const payloadMessages = [
@@ -516,7 +559,7 @@
           ...active.messages
         ];
 
-        const res = await fetch('/api/chat', {
+        const response = await fetch('/api/chat', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({
@@ -527,15 +570,43 @@
             messages: payloadMessages,
             temp: parseFloat($('temp').value),
             topP: parseFloat($('topP').value),
-            maxTokens: parseInt($('maxTokens').value)
+            maxTokens: parseInt($('maxTokens').value) || 2048,
+            stream: true
           })
         });
-        const d = await res.json();
 
-        active.messages.push({ role: 'assistant', content: d.reply || d.error || 'No response' });
-        active.updatedAt = new Date().toISOString();
-        saveChatSessions(sessions);
-        renderActiveChat();
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let fullReply = '';
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n\n');
+          buffer = lines.pop();
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = JSON.parse(line.replace('data: ', ''));
+              if (data.chunk) {
+                fullReply += data.chunk;
+                bubbleEl.textContent = fullReply;
+                msgBox.scrollTop = msgBox.scrollHeight;
+              }
+              if (data.done) {
+                if (data.error) fullReply = 'Error: ' + data.error;
+                active.messages.push({ role: 'assistant', content: fullReply });
+                active.updatedAt = new Date().toISOString();
+                saveChatSessions(sessions);
+                renderActiveChat();
+                return;
+              }
+            }
+          }
+        }
       } catch(e) {
         active.messages.push({ role: 'assistant', content: 'Error: ' + e.message });
         saveChatSessions(sessions);

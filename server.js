@@ -134,24 +134,24 @@ const PAGE = `<!doctype html>
         $('models').innerHTML = Object.keys(groups).map(p => {
           const list = groups[p].map(m => {
             const sid = safeId(m);
-            return `<div class="flex items-center justify-between py-2 text-sm">
+            return \`<div class="flex items-center justify-between py-2 text-sm">
               <div class="flex items-center gap-2">
-                <span class="font-mono text-slate-700">${m}</span>
-                <button onclick="copyId('${m}', this)" class="text-xs text-slate-400 hover:text-slate-700 border border-slate-200 rounded px-1.5 py-0.5 transition-colors">Copy</button>
+                <span class="font-mono text-slate-700">\${m}</span>
+                <button onclick="copyId('\${m}', this)" class="text-xs text-slate-400 hover:text-slate-700 border border-slate-200 rounded px-1.5 py-0.5 transition-colors">Copy</button>
               </div>
-              <div id="st-${sid}" class="flex items-center gap-2">
+              <div id="st-\${sid}" class="flex items-center gap-2">
                 <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">Untested</span>
-                <button onclick="testCompat('${m}')" id="cmp-${sid}" class="ml-1 inline-flex items-center rounded-md text-xs font-medium h-7 px-2 bg-slate-100 text-slate-900 hover:bg-slate-200">Compat</button>
+                <button onclick="testCompat('\${m}')" id="cmp-\${sid}" class="ml-1 inline-flex items-center rounded-md text-xs font-medium h-7 px-2 bg-slate-100 text-slate-900 hover:bg-slate-200">Compat</button>
               </div>
-            </div>`;
+            </div>\`;
           }).join('');
 
-          return `<div class="border border-slate-200 rounded-lg p-4 bg-slate-50/50 space-y-2">
+          return \`<div class="border border-slate-200 rounded-lg p-4 bg-slate-50/50 space-y-2">
             <div class="flex items-center justify-between border-b pb-2 border-slate-200">
-              <h5 class="font-bold text-sm text-slate-800 uppercase tracking-wider">${p} (${groups[p].length})</h5>
+              <h5 class="font-bold text-sm text-slate-800 uppercase tracking-wider">\${p} (\${groups[p].length})</h5>
             </div>
-            <div class="divide-y divide-slate-100 bg-white rounded-md p-2 border border-slate-100">${list}</div>
-          </div>`;
+            <div class="divide-y divide-slate-100 bg-white rounded-md p-2 border border-slate-100">\${list}</div>
+          </div>\`;
         }).join('');
 
         $('btnTest').disabled = false;
@@ -193,21 +193,21 @@ const PAGE = `<!doctype html>
 
         if (ms > 4000) {
           STATUS[m] = 'fail';
-          target.innerHTML = `<span class="inline-flex items-center rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-700 border border-red-200" title="Latency > 4000ms">Failed (Timeout)</span> <span class="text-xs text-slate-400 font-mono">${ms}ms</span>${cmp}`;
+          target.innerHTML = \`<span class="inline-flex items-center rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-700 border border-red-200" title="Latency > 4000ms">Failed (Timeout)</span> <span class="text-xs text-slate-400 font-mono">\${ms}ms</span>\${cmp}\`;
         } else if (d.error) {
           STATUS[m] = 'fail';
-          target.innerHTML = `<span class="inline-flex items-center rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-700 border border-red-200" title="${d.error}">Failed</span> <span class="text-xs text-slate-400 font-mono">${ms}ms</span>${cmp}`;
+          target.innerHTML = \`<span class="inline-flex items-center rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-700 border border-red-200" title="\${d.error}">Failed</span> <span class="text-xs text-slate-400 font-mono">\${ms}ms</span>\${cmp}\`;
         } else if (d.reply && d.reply.includes("prevent abuse of free resources")) {
           STATUS[m] = 'limit';
-          target.innerHTML = `<span class="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700 border border-amber-200" title="${d.reply}">Limit Exceeded</span> <span class="text-xs text-slate-400 font-mono">${ms}ms</span>${cmp}`;
+          target.innerHTML = \`<span class="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700 border border-amber-200" title="\${d.reply}">Limit Exceeded</span> <span class="text-xs text-slate-400 font-mono">\${ms}ms</span>\${cmp}\`;
         } else {
           STATUS[m] = 'ok';
-          target.innerHTML = `<span class="inline-flex items-center rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-semibold text-green-700 border border-green-200">Work (OK)</span> <span class="text-xs text-slate-400 font-mono">${ms}ms</span>${cmp}`;
+          target.innerHTML = \`<span class="inline-flex items-center rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-semibold text-green-700 border border-green-200">Work (OK)</span> <span class="text-xs text-slate-400 font-mono">\${ms}ms</span>\${cmp}\`;
         }
         updateSummary();
       } catch(e) {
         STATUS[m] = 'fail';
-        target.innerHTML = `<span class="inline-flex items-center rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-700">Error</span>`;
+        target.innerHTML = \`<span class="inline-flex items-center rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-700">Error</span>\`;
         updateSummary();
       }
     }

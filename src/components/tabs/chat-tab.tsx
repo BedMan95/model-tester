@@ -25,7 +25,9 @@ export default function ChatTab() {
   const modelForSend = active?.model || models[0] || "";
 
   const scrollToBottom = () => bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  useEffect(scrollToBottom, [active?.messages.length, streamText]);
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [active?.messages.length, streamText]);
 
   const send = async () => {
     const text = input.trim();

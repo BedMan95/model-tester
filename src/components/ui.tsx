@@ -66,3 +66,57 @@ export function SectionTitle({
     </div>
   );
 }
+
+/**
+ * Searchable model picker over a native <datalist>.
+ *
+ * Model catalogs run past a hundred entries (the legacy app shipped the same
+ * problem and solved it with TomSelect); a plain <select> is unusable there.
+ * datalist gives type-ahead filtering with no dependency and keeps the
+ * keyboard-tab semantics of a real input.
+ */
+export function ModelSelect({
+  value,
+  onChange,
+  models,
+  placeholder = "Select a model…",
+  className,
+}: {
+  value: string;
+  onChange: (model: string) => void;
+  models: string[];
+  placeholder?: string;
+  className?: string;
+}) {
+  const listId = `ms-${Math.random().toString(36).slice(2, 8)}`;
+  const exact = models.includes(value);
+
+  return (
+    <div className="relative">
+      <input
+        list={listId}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onBlur={() => {
+          // datalist can leave a partial string on tab/enter; snap to the
+          // unique completion when the typed text is a prefix, else revert to
+          // the last exact match so we never send a truncated model id.
+          if (exact) return;
+          const hits = models.filter((m) => m.startsWith(value.trim()));
+          if (hits.length === 1) onChange(hits[0]);
+        }}
+        placeholder={placeholder}
+        className={cn(
+          "h-9 w-full rounded-lg border border-border bg-card px-2 font-mono text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-brand",
+          !exact && "border-amber-400 dark:border-amber-600",
+          className,
+        )}
+      />
+      <datalist id={listId}>
+        {models.map((m) => (
+          <option key={m} value={m} />
+        ))}
+      </datalist>
+    </div>
+  );
+}

@@ -58,11 +58,13 @@ interface AppContextValue {
   sessions: ChatSession[];
   activeSessionId: string | null;
   setActiveSessionId: (id: string | null) => void;
-  createSession: (model: string) => void;
+  createSession: (model: string, title?: string) => string;
   deleteSession: (id: string) => void;
   getSession: (id: string | null) => ChatSession | undefined;
   updateSession: (s: ChatSession) => void;
   appendMessage: (sessionId: string, msg: ChatMessage) => void;
+  /** Rename a session from its first user message (v1 behaviour). */
+  titleMessage: (sessionId: string, text: string) => void;
 
   history: TestRecord[];
   pushHistory: (r: TestRecord) => void;
@@ -138,17 +140,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
       sessions,
       activeSessionId,
       setActiveSessionId,
-      createSession: (model) => {
+      createSession: (model, title) => {
         const id = `s_${Date.now().toString(36)}`;
         const s: ChatSession = {
           id,
-          title: model || "Chat",
+          // First message becomes the title (v1 behaviour); fallback "chat".
+          title: title || "chat",
           model,
           messages: [],
           createdAt: Date.now(),
         };
         setSessions((prev) => [s, ...prev]);
         setActiveSessionId(id);
+        return id;
       },
       deleteSession: (id) => {
         setSessions((prev) => prev.filter((s) => s.id !== id));
@@ -165,6 +169,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
               : s,
           ),
         ),
+
+      titleMessage: (sessionId, text) => {
+        const title = text.trim().slice(0, 48);
+        if (!title) return;
+        setSessions((prev) =>
+          prev.map((s) =>
+            s.id === sessionId && s.messages.length <= 1
+              ? { ...s, title }
+              : s,
+          ),
+        );
+      },
 
       history,
       pushHistory: (r) => setHistory((prev) => [r, ...prev].slice(0, 100)),

@@ -2,13 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useApp } from "@/components/app-store";
-import { Button, Card } from "@/components/ui";
+import { Button, Card, ModelSelect } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import type { ChatMessage } from "@/lib/types";
 
 export default function ChatTab() {
   const app = useApp();
-  const { sessions, activeSessionId, setActiveSessionId, createSession, deleteSession, getSession, updateSession, appendMessage, models, creds } = app;
+  const { sessions, activeSessionId, setActiveSessionId, createSession, deleteSession, getSession, updateSession, appendMessage, titleMessage, models, creds } = app;
 
   const active = getSession(activeSessionId) ?? sessions[0];
 
@@ -31,12 +31,17 @@ export default function ChatTab() {
 
   const send = async () => {
     const text = input.trim();
-    if (!text || busy || !active) return;
+    if (!text || busy) return;
     setInput("");
 
     const userMsg: ChatMessage = { role: "user", content: text };
-    const messages = [...active.messages, userMsg];
-    appendMessage(active.id, userMsg);
+    const sessionId = active ? active.id : createSession(modelForSend, text);
+    const base = active ?? getSession(sessionId);
+    if (!base) return;
+
+    const messages = [...base.messages, userMsg];
+    appendMessage(sessionId, userMsg);
+    titleMessage(sessionId, text);
 
     setBusy(true);
     setStreamText("");
@@ -49,7 +54,7 @@ export default function ChatTab() {
           url: creds.url || "",
           key: creds.key,
           preset: creds.preset,
-          model: modelForSend,
+          model: base.model || modelForSend,
           messages,
           stream: true,
         }),
@@ -57,7 +62,7 @@ export default function ChatTab() {
 
       if (!res.body) {
         const d = await res.json().catch(() => null);
-        appendMessage(active.id, { role: "assistant", content: d?.reply || d?.error || "No response" });
+        appendMessage(sessionId, { role: "assistant", content: d?.reply || d?.error || "No response" });
         return;
       }
 
@@ -86,9 +91,9 @@ export default function ChatTab() {
           }
         }
       }
-      appendMessage(active.id, { role: "assistant", content: full });
+      appendMessage(sessionId, { role: "assistant", content: full });
     } catch (e) {
-      appendMessage(active.id, { role: "assistant", content: `Network error: ${(e as Error).message}` });
+      appendMessage(sessionId, { role: "assistant", content: `Network error: ${(e as Error).message}` });
     } finally {
       setStreamText("");
       setBusy(false);
@@ -132,8 +137,23 @@ export default function ChatTab() {
             <div className="truncate text-xs font-semibold text-foreground">
               {active?.title ?? "No session"}
             </div>
-            <div className="truncate font-mono text-[10px] text-muted-foreground">
-              {modelForSend || "no model"}
+            <div className="mt-0.5 max-w-full">
+              {models.length > 0 ? (
+                <ModelSelect
+                  value={modelForSend}
+                  onChange={(m) => {
+                    if (active) updateSession({ ...active, model: m });
+                    else createSession(m);
+                  }}
+                  models={models}
+                  placeholder="Select a model…"
+                  className="h-7 max-w-72 text-[10px]"
+                />
+              ) : (
+                <span className="truncate font-mono text-[10px] text-muted-foreground">
+                  {modelForSend || "no model — load in Tester"}
+                </span>
+              )}
             </div>
           </div>
           <Button variant="danger" size="sm" onClick={() => active && deleteSession(active.id)}>

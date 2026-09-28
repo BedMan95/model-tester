@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useApp } from "@/components/app-store";
-import { Button, Card } from "@/components/ui";
+import { Button, Card, ModelSelect } from "@/components/ui";
 import type { Metrics } from "@/lib/types";
 
 interface Side {
@@ -60,29 +60,21 @@ export default function CompareTab() {
         <div className="grid gap-3 md:grid-cols-2">
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground">Model A</label>
-            <select
+            <ModelSelect
               value={modelA}
-              onChange={(e) => setModelA(e.target.value)}
-              className="h-9 w-full rounded-lg border border-border bg-card px-2 font-mono text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-brand"
-            >
-              {models.length === 0 && <option value="">Load models in Tester first</option>}
-              {models.map((m) => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </select>
+              onChange={setModelA}
+              models={models}
+              placeholder={models.length ? "Select a model…" : "Load models in Tester first"}
+            />
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground">Model B</label>
-            <select
+            <ModelSelect
               value={modelB}
-              onChange={(e) => setModelB(e.target.value)}
-              className="h-9 w-full rounded-lg border border-border bg-card px-2 font-mono text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-brand"
-            >
-              {models.length === 0 && <option value="">Load models in Tester first</option>}
-              {models.map((m) => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </select>
+              onChange={setModelB}
+              models={models}
+              placeholder={models.length ? "Select a model…" : "Load models in Tester first"}
+            />
           </div>
         </div>
         <div className="mt-3 space-y-1.5">

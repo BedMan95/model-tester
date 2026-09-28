@@ -384,7 +384,12 @@ export default function TesterTab() {
           </div>
         ) : null}
 
-        {models.length === 0 ? (
+        {loading ? (
+          <div className="flex flex-col items-center gap-3 py-12">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand border-t-transparent" />
+            <p className="text-xs text-muted-foreground">Loading models…</p>
+          </div>
+        ) : models.length === 0 ? (
           <p className="py-8 text-center text-xs text-muted-foreground">
             No models loaded. Choose a preset and click Load Models.
           </p>

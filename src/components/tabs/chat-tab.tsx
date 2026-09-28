@@ -168,9 +168,9 @@ export default function ChatTab() {
             </p>
           )}
           {active?.messages.map((m, i) => (
-            <Bubble key={i} msg={m} />
+            <Bubble key={i} msg={m} model={m.role === "assistant" ? active.model : undefined} />
           ))}
-          {streamText && <Bubble msg={{ role: "assistant", content: streamText }} streaming />}
+          {streamText && <Bubble msg={{ role: "assistant", content: streamText }} streaming model={active?.model} />}
           <div ref={bottomRef} />
         </div>
 
@@ -192,11 +192,14 @@ export default function ChatTab() {
   );
 }
 
-function Bubble({ msg, streaming }: { msg: ChatMessage; streaming?: boolean }) {
+function Bubble({ msg, streaming, model }: { msg: ChatMessage; streaming?: boolean; model?: string }) {
   const isUser = msg.role === "user";
   return (
     <div className={cn("flex flex-col", isUser ? "items-end" : "items-start")}>
-      <span className="mb-0.5 text-[10px] text-muted-foreground">{msg.role}</span>
+      <span className="mb-0.5 text-[10px] text-muted-foreground flex items-center gap-1">
+        {msg.role}
+        {!isUser && model && <span className="px-1.5 py-0.5 rounded bg-brand/10 text-brand text-[9px] font-mono">{model}</span>}
+      </span>
       <div
         className={cn(
           "max-w-[85%] whitespace-pre-wrap rounded-xl px-3 py-2 text-xs font-mono",

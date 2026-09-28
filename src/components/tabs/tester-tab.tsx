@@ -45,6 +45,7 @@ export default function TesterTab() {
   const [error, setError] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<"all" | "ok" | "limit" | "fail">("all");
+  const [compatLoading, setCompatLoading] = useState<string | null>(null);
 
   const update = <K extends keyof TestParams>(k: K, v: TestParams[K]) =>
     setParams((p) => ({ ...p, [k]: v }));
@@ -142,6 +143,7 @@ export default function TesterTab() {
 
   const doCompat = async (m: string) => {
     setRow(m, { compat: undefined });
+    setCompatLoading(m);
     try {
       const res = await fetch("/api/compat", {
         method: "POST",
@@ -157,6 +159,8 @@ export default function TesterTab() {
       if (d.result) setRow(m, { compat: d.result as CompatResult });
     } catch {
       /* ignore */
+    } finally {
+      setCompatLoading(null);
     }
   };
 
@@ -468,8 +472,15 @@ export default function TesterTab() {
                               Copy
                             </button>
                           )}
-                          <Button size="sm" variant="ghost" className="px-1.5 py-0.5 text-[10px]" onClick={() => doCompat(m)}>
-                            Compat
+                          <Button size="sm" variant="ghost" className="px-1.5 py-0.5 text-[10px]" onClick={() => doCompat(m)} disabled={compatLoading === m}>
+                            {compatLoading === m ? (
+                              <span className="flex items-center gap-1">
+                                <span className="h-3 w-3 animate-spin rounded-full border border-current border-t-transparent" />
+                                <span>…</span>
+                              </span>
+                            ) : (
+                              "Compat"
+                            )}
                           </Button>
                         </div>
                       </div>

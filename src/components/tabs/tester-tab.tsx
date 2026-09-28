@@ -44,6 +44,7 @@ export default function TesterTab() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [filter, setFilter] = useState<"all" | "ok" | "limit" | "fail">("all");
 
   const update = <K extends keyof TestParams>(k: K, v: TestParams[K]) =>
     setParams((p) => ({ ...p, [k]: v }));
@@ -204,11 +205,13 @@ export default function TesterTab() {
   const grouped = useMemo(() => {
     const g: Record<string, string[]> = {};
     for (const m of filteredModels) {
+      const row = rows[m];
+      if (filter !== "all" && row?.status !== filter) continue;
       const p = providerOfModel(m);
       (g[p] ??= []).push(m);
     }
     return g;
-  }, [filteredModels]);
+  }, [filteredModels, rows, filter]);
 
   const activeRows = useMemo(
     () => Object.values(rows).filter((r) => r.status !== "untested" && r.status !== "testing"),
@@ -385,6 +388,24 @@ export default function TesterTab() {
           </div>
         ) : null}
 
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {(["all", "ok", "limit", "fail"] as const).map((f) => (
+            <button
+              key={f}
+              type="button"
+              onClick={() => setFilter(f)}
+              className={cn(
+                "rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors",
+                filter === f
+                  ? "bg-brand text-brand-foreground border-brand"
+                  : "text-muted-foreground border-border hover:bg-muted",
+              )}
+            >
+              {f === "all" ? "All" : f === "ok" ? "Work" : f === "limit" ? "Limit" : "Fail"}
+            </button>
+          ))}
+        </div>
+
         {loading ? (
           <div className="flex flex-col items-center gap-3 py-12">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand border-t-transparent" />
@@ -433,6 +454,19 @@ export default function TesterTab() {
                             <CompatChips result={row.compat} />
                           ) : (
                             <StatusBadge status={row?.status ?? "untested"} />
+                          )}
+                          {row?.status === "ok" && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigator.clipboard.writeText(m);
+                              }}
+                              className="px-1.5 py-0.5 text-[10px] font-mono text-brand hover:bg-brand/10 rounded"
+                              title="Copy model ID"
+                            >
+                              Copy
+                            </button>
                           )}
                           <Button size="sm" variant="ghost" className="px-1.5 py-0.5 text-[10px]" onClick={() => doCompat(m)}>
                             Compat

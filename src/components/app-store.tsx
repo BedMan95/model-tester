@@ -93,8 +93,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const [models, setModels] = useState<string[]>([]);
-  const [rows, setRows] = useState<Record<string, ModelRow>>({});
+  const [models, setModels] = useLocalStorage<string[]>(
+    "model_tester_models",
+    [],
+  );
+  const [rows, setRowsState] = useLocalStorage<Record<string, ModelRow>>(
+    "model_tester_rows",
+    {},
+  );
 
   const [sessions, setSessions] = useLocalStorage<ChatSession[]>(
     "model_tester_sessions",
@@ -109,8 +115,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const setRow = useCallback(
     (m: string, r: Partial<ModelRow>) =>
-      setRows((prev) => ({ ...prev, [m]: { ...prev[m], model: m, status: prev[m]?.status ?? "untested", ...r } as ModelRow })),
-    [],
+      setRowsState((prev) => ({ ...prev, [m]: { ...prev[m], model: m, status: prev[m]?.status ?? "untested", ...r } as ModelRow })),
+    [setRowsState],
   );
 
   const value = useMemo<AppContextValue>(() => {
@@ -127,7 +133,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setModels,
       rows,
       setRow,
-      resetRows: () => setRows({}),
+      resetRows: () => setRowsState({}),
 
       sessions,
       activeSessionId,
@@ -170,6 +176,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     models,
     rows,
     setRow,
+    setRowsState,
     sessions,
     setSessions,
     activeSessionId,

@@ -48,7 +48,7 @@ export default function HistoryTab() {
                   <StatusBadge status={h.status} />
                 </div>
                 <div className="mt-0.5 truncate text-[10px] text-muted-foreground">
-                  {h.url} • {new Date(h.timestamp ?? 0).toLocaleString()}
+                  {h.url} • {h.timestamp ? new Date(h.timestamp).toLocaleString() : ""}
                 </div>
                 {m && (
                   <div className="mt-1 font-mono text-[10px] text-muted-foreground">

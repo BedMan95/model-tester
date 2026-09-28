@@ -132,6 +132,7 @@ export default function TesterTab() {
         preset: creds.preset,
         status,
         metrics: d.metrics,
+        timestamp: Date.now(),
       });
     } catch (e) {
       setRow(m, { status: "fail", error: (e as Error).message });

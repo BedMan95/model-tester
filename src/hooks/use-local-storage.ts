@@ -2,17 +2,20 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+/**
+ * Reads localStorage on first render (lazy init) so the value is correct from
+ * the very first paint — a fresh mount on /chat or /compare must already see
+ * the credentials saved on the Tester page, not the default.
+ */
 export function useLocalStorage<T>(key: string, initial: T) {
-  const [value, setValue] = useState<T>(initial);
-
-  useEffect(() => {
+  const [value, setValue] = useState<T>(() => {
     try {
       const raw = localStorage.getItem(key);
-      if (raw != null) setValue(JSON.parse(raw) as T);
+      return raw != null ? (JSON.parse(raw) as T) : initial;
     } catch {
-      /* ignore parse errors */
+      return initial;
     }
-  }, [key]);
+  });
 
   useEffect(() => {
     try {

@@ -1,56 +1,57 @@
 # AI Model Tester
 
-A lightweight, modern web app built with **Node.js** and **Express** to test OpenAI-compatible endpoints, verify model availability, and run capability/compatibility checks (Chat, Tools, JSON mode, Streaming, Vision).
+A modern web app for testing LLM endpoints across OpenAI-compatible providers,
+Anthropic, and Google Gemini: batch model availability testing, capability
+checks, streaming chat, and side-by-side comparison.
 
----
+Built with **Next.js 15 (App Router)**, **React 19**, **TypeScript**, and
+**Tailwind CSS v4**.
 
 ## Features
 
-- **Model Discovery**: Fetch all available models from an OpenAI-compatible provider.
-- **Batch Parallel Testing**: Test models concurrently in configurable batches (default 5 models at a time) with short timeouts (4s).
-- **Status Badges**:
-  - `Work (OK)` (Green): Model responded successfully.
-  - `Limit Exceeded` (Amber): Model quota or rate limit exceeded.
-  - `Failed` / `Failed (Timeout)` (Red): Error or timeout.
-- **Capability / Compatibility Test**:
-  - Test Chat, Tools / Function Calling, Structured JSON output, Response Streaming, and Vision support per model.
-- **One-Click Copy**: Fast "Copy Model ID" button.
-- **Modern UI**: Styled with Tailwind CSS for a clean layout.
+- **Model Discovery** — live model catalogs for OpenAI-compatible, Anthropic,
+  and Gemini endpoints.
+- **Batch Parallel Testing** — test models in batches of 5 with a
+  configurable timeout.
+- **Status Badges** — `Work` (green), `Limit` (amber), `Fail` (red).
+- **Capability Check** — Chat, Tools / Function calling, JSON mode,
+  Streaming, and Vision, probed with provider-native request shapes.
+- **Streaming Chat** — real time-to-first-token across all three providers,
+  with persisted multi-session conversations.
+- **Compare** — side-by-side responses with latency / throughput metrics.
+- **History & Export** — last 100 test records, JSON and CSV export.
+- **Presets** — one-click URLs for OpenRouter, Groq, Together, Ollama,
+  LM Studio, vLLM, Anthropic, and Gemini; custom endpoints supported.
+- **Dark / Light mode** with a persistent theme toggle.
 
----
+## Quick start
 
-## Prerequisites
+```bash
+npm install
+npm run dev        # http://localhost:3000
+```
 
-- **Node.js** v18+
-- **npm**
+Production:
 
----
+```bash
+npm run build
+npm start
+```
 
-## Quick Start
+## Deployment (Vercel)
 
-1. **Clone & Install**:
-   ```bash
-   git clone https://github.com/BedMan95/model-tester.git
-   cd model-tester
-   npm install
-   ```
+Import the repo into Vercel — the framework preset picks up `next`
+automatically. No build command or environment variables are required;
+credentials are entered in the browser and stored locally, so the same
+deploy works for every provider.
 
-2. **Run Server**:
-   ```bash
-   node server.js
-   ```
+## Project layout
 
-3. **Open Browser**:
-   Navigate to `http://localhost:3000`.
-
----
-
-## Tech Stack
-
-- **Backend**: Node.js, Express, `openai` SDK (`^4.50.0`)
-- **Frontend**: HTML5, Tailwind CSS, Vanilla JavaScript
-
----
+- `src/app` — pages (`/`, `/chat`, `/compare`, `/history`) and API routes
+  (`/api/models`, `/api/chat`, `/api/compat`).
+- `src/lib/providers` — one module per provider family; routes dispatch on
+  the request's `preset` or `url`.
+- `src/components` — shared UI, app state, and the four tab views.
 
 ## License
 

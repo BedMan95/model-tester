@@ -20,6 +20,7 @@ export default function ChatTab() {
   const [streaming, setStreaming] = useState(false);
   const [streamText, setStreamText] = useState("");
   const [busy, setBusy] = useState(false);
+  const [thinking, setThinking] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const modelForSend = active?.model || models[0] || "";
@@ -44,6 +45,7 @@ export default function ChatTab() {
     titleMessage(sessionId, text);
 
     setBusy(true);
+    setThinking(true);
     setStreamText("");
 
     try {
@@ -82,6 +84,7 @@ export default function ChatTab() {
           if (!line.startsWith("data: ")) continue;
           const ev = JSON.parse(line.slice(6));
           if (ev.chunk) {
+            if (thinking) setThinking(false);
             full += ev.chunk;
             setStreamText(full);
           }
@@ -96,6 +99,7 @@ export default function ChatTab() {
       appendMessage(sessionId, { role: "assistant", content: `Network error: ${(e as Error).message}`, model: base.model || modelForSend });
     } finally {
       setStreamText("");
+      setThinking(false);
       setBusy(false);
     }
   };
@@ -170,7 +174,7 @@ export default function ChatTab() {
           {active?.messages.map((m, i) => (
             <Bubble key={i} msg={m} model={m.model} />
           ))}
-          {streamText && <Bubble msg={{ role: "assistant", content: streamText }} streaming model={active?.model} />}
+          {streamText && <Bubble msg={{ role: "assistant", content: streamText }} streaming model={active?.model} thinking={thinking} />}
           <div ref={bottomRef} />
         </div>
 
@@ -192,13 +196,22 @@ export default function ChatTab() {
   );
 }
 
-function Bubble({ msg, streaming, model }: { msg: ChatMessage; streaming?: boolean; model?: string }) {
+function Bubble({ msg, streaming, model, thinking }: { msg: ChatMessage; streaming?: boolean; model?: string; thinking?: boolean }) {
   const isUser = msg.role === "user";
   return (
     <div className={cn("flex flex-col", isUser ? "items-end" : "items-start")}>
       <span className="mb-0.5 text-[10px] text-muted-foreground flex items-center gap-1">
         {msg.role}
         {!isUser && model && <span className="px-1.5 py-0.5 rounded bg-brand/10 text-brand text-[9px] font-mono">{model}</span>}
+        {!isUser && (thinking || streaming) && (
+          <span className="flex items-center gap-0.5 text-[9px] text-muted-foreground">
+            <span className="flex gap-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-current animate-bounce" style={{animationDelay: '0ms'}} />
+              <span className="w-1.5 h-1.5 rounded-full bg-current animate-bounce" style={{animationDelay: '150ms'}} />
+              <span className="w-1.5 h-1.5 rounded-full bg-current animate-bounce" style={{animationDelay: '300ms'}} />
+            </span>
+          </span>
+        )}
       </span>
       <div
         className={cn(

@@ -5,7 +5,16 @@ import type {
   Metrics,
   ModelsRequest,
 } from "@/lib/types";
-import { GEMINI_API_VERSION, approxTokens, isLimitError, makeMetrics, toApiError } from "./shared";
+import {
+  GEMINI_API_VERSION,
+  approxTokens,
+  isLimitError,
+  makeMetrics,
+  toApiError,
+  type CompletionCallbacks,
+} from "./shared";
+
+export type { CompletionCallbacks };
 
 const API = "https://generativelanguage.googleapis.com";
 
@@ -52,10 +61,6 @@ export async function listModels(
   }
 }
 
-export interface CompletionCallbacks {
-  onChunk: (text: string) => void;
-  signal?: AbortSignal;
-}
 
 function geminiMessages(messages: ChatMessage[], sysPrompt?: string) {
   const contents: { role: "user" | "model"; parts: { text: string }[] }[] = [];

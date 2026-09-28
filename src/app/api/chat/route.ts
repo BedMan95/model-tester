@@ -1,8 +1,5 @@
 import type { ChatRequest, StreamEvent } from "@/lib/types";
-import { detectProvider, toApiError } from "@/lib/providers/shared";
-import * as openai from "@/lib/providers/openai";
-import * as anthropic from "@/lib/providers/anthropic";
-import * as gemini from "@/lib/providers/gemini";
+import { completion, toClientError, isLimitError } from "@/lib/providers";
 
 export const dynamic = "force-dynamic";
 
@@ -19,22 +16,14 @@ export async function POST(req: Request) {
     return json({ error: "Missing model" }, 400);
   }
 
-  const provider = detectProvider(body.preset, body.url);
-  const runner =
-    provider === "anthropic"
-      ? anthropic.completion
-      : provider === "gemini"
-        ? gemini.completion
-        : openai.completion;
-
   if (!body.stream) {
     try {
-      const { reply, metrics } = await runner(body, { onChunk: () => {} });
+      const { reply, metrics } = await completion(body, { onChunk: () => {} });
       return json({ reply, metrics });
     } catch (e) {
-      const err = toApiError(e);
-      const status = /required|missing/i.test(err.message) ? 400 : 502;
-      return json({ error: err.message }, status);
+      const message = toClientError(e);
+      const status = /required|missing/i.test(message) ? 400 : 502;
+      return json({ error: message }, status);
     }
   }
 
@@ -45,22 +34,20 @@ export async function POST(req: Request) {
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       try {
-        const { reply, metrics } = await runner(body!, {
+        const { reply, metrics } = await completion(body!, {
           onChunk: (text) => {
             if (text) controller.enqueue(sse({ chunk: text }));
           },
         });
         controller.enqueue(sse({ done: true, reply, metrics }));
       } catch (e) {
-        const err = toApiError(e);
+        const message = toClientError(e);
         controller.enqueue(
           sse({
             done: true,
-            error:
-              err.message.toLowerCase().includes("limit") ||
-              err.message.includes("429")
-                ? `Limit exceeded: ${err.message}`
-                : err.message,
+            error: isLimitError(message)
+              ? `Limit exceeded: ${message}`
+              : message,
           }),
         );
       } finally {
@@ -79,10 +66,7 @@ export async function POST(req: Request) {
   });
 }
 
-function json(
-  data: unknown,
-  status = 200,
-): Response {
+function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
     status,
     headers: { "Content-Type": "application/json" },

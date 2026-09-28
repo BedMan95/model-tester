@@ -1,15 +1,32 @@
 /** Shared request/response shapes for the tester API. */
 
-export type ProviderPreset =
-  | "custom"
-  | "openrouter"
-  | "groq"
-  | "together"
-  | "ollama"
-  | "lmstudio"
-  | "vllm"
+/**
+ * Provider families the client picks from.
+ *
+ *  - `openai-compatible` — any OpenAI-protocol endpoint; the user fills in
+ *    their own `url` (OpenRouter, Groq, Ollama, Together, LM Studio, vLLM,
+ *    a private OpenAI deployment, …). The OpenAI SDK speaks the wire format.
+ *  - `anthropic` — Claude API; its own messages wire format.
+ *  - `gemini` — Google Gemini; its own REST wire format.
+ */
+export type ProviderFamily =
+  | "openai-compatible"
   | "anthropic"
   | "gemini";
+
+export const PRESETS: Record<ProviderFamily, string> = {
+  "openai-compatible": "",
+  anthropic: "https://api.anthropic.com",
+  gemini: "https://generativelanguage.googleapis.com",
+};
+
+export const PRESET_LABELS: Record<ProviderFamily, string> = {
+  "openai-compatible": "OpenAI-compatible (custom)",
+  anthropic: "Anthropic Claude",
+  gemini: "Google Gemini",
+};
+
+export type ProviderPreset = ProviderFamily;
 
 export type ChatRole = "system" | "user" | "assistant";
 
@@ -102,29 +119,6 @@ export interface TestRecord {
   timestamp?: string | number;
 }
 
-export const PRESETS: Record<ProviderPreset, string> = {
-  openrouter: "https://openrouter.ai/api/v1",
-  groq: "https://api.groq.com/openai/v1",
-  together: "https://api.together.xyz/v1",
-  ollama: "http://localhost:11434/v1",
-  lmstudio: "http://localhost:1234/v1",
-  vllm: "http://localhost:8000/v1",
-  anthropic: "https://api.anthropic.com",
-  gemini: "https://generativelanguage.googleapis.com",
-  custom: "",
-};
-
-export const PRESET_LABELS: Record<ProviderPreset, string> = {
-  custom: "Custom Endpoint",
-  openrouter: "OpenRouter",
-  groq: "Groq Cloud",
-  together: "Together AI",
-  ollama: "Ollama (local)",
-  lmstudio: "LM Studio (local)",
-  vllm: "vLLM / LocalAI",
-  anthropic: "Anthropic Claude",
-  gemini: "Google Gemini",
-};
 
 export const COMPAT_FEATURES: CompatFeature[] = [
   "chat",

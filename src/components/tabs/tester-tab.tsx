@@ -5,7 +5,7 @@ import { useLocalStorage } from "@/hooks/use-local-storage";
 import { useApp, StatusBadge, CompatChips } from "@/components/app-store";
 import { Button, Card, SectionTitle } from "@/components/ui";
 import { PRESET_LABELS, PRESETS } from "@/lib/types";
-import type { ProviderPreset, ModelTestStatus, CompatResult } from "@/lib/types";
+import type { ProviderFamily, ModelTestStatus, CompatResult } from "@/lib/types";
 import { cn } from "@/lib/cn";
 
 const CONCURRENCY = 5;
@@ -234,7 +234,7 @@ export default function TesterTab() {
             <select
               value={creds.preset}
               onChange={(e) =>
-                setCreds({ ...creds, preset: e.target.value as ProviderPreset, url: PRESETS[e.target.value as ProviderPreset] || creds.url })
+                setCreds({ ...creds, preset: e.target.value as ProviderFamily, url: PRESETS[e.target.value as ProviderFamily] || creds.url })
               }
               className="h-9 w-full rounded-lg border border-border bg-card px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-brand"
             >

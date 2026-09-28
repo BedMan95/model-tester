@@ -1,5 +1,14 @@
 import type { ChatMessage, ChatRequest, Metrics } from "@/lib/types";
 
+/** Progress callbacks for streaming completions. */
+export interface CompletionCallbacks {
+  onChunk: (text: string) => void;
+  signal?: AbortSignal;
+}
+
+/**
+ * Phrases that indicate a quota/rate-limit wall rather than a real failure.
+ */
 export const LIMIT_HINTS = [
   "prevent abuse of free resources",
   "limit exceeded",
@@ -39,15 +48,31 @@ export function toApiError(err: unknown): ApiError {
   return new ApiError(fmt(err), err);
 }
 
-/** Routes a request to the correct provider family from preset or URL. */
+/**
+ * Routes a request to a provider handler.
+ *
+ * Two families:
+ *  - **openai** — any OpenAI-compatible endpoint (custom, OpenRouter, Groq,
+ *    Ollama, etc.); the OpenAI SDK covers them all through `baseURL`.
+ *  - **native** — Anthropic and Gemini, which speak their own wire formats.
+ *
+ * Native is chosen when the URL or preset names one of the two APIs.
+ */
 export function detectProvider(
   preset?: string,
   url?: string,
-): "openai" | "anthropic" | "gemini" {
-  if (preset === "anthropic" || url?.includes("anthropic.com")) return "anthropic";
-  if (preset === "gemini" || url?.includes("generativelanguage.googleapis.com"))
-    return "gemini";
-  return "openai";
+): "openai" | "native" {
+  const isAnthropic =
+    preset === "anthropic" || (url ?? "").includes("anthropic.com");
+  const isGemini =
+    preset === "gemini" ||
+    (url ?? "").includes("generativelanguage.googleapis.com");
+  if (!isAnthropic && !isGemini) return "openai";
+  return "native";
+}
+
+export function isAnthropic(preset?: string, url?: string): boolean {
+  return preset === "anthropic" || (url ?? "").includes("anthropic.com");
 }
 
 export function makeClient(url: string, key: string, timeout: number) {

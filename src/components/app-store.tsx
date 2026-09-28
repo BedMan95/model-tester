@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -13,14 +14,14 @@ import type {
   ChatMessage,
   CompatResult,
   ModelTestStatus,
-  ProviderPreset,
+  ProviderFamily,
   TestRecord,
 } from "@/lib/types";
-import { PRESETS, PRESET_LABELS } from "@/lib/types";
+import { PRESETS } from "@/lib/types";
 import { cn } from "@/lib/cn";
 
 export interface Credentials {
-  preset: ProviderPreset;
+  preset: ProviderFamily;
   url: string;
   key: string;
 }
@@ -42,16 +43,10 @@ export interface ChatSession {
 }
 
 /** All cross-tab state lives in the context so it survives page transitions. */
-export interface Credentials {
-  preset: ProviderPreset;
-  url: string;
-  key: string;
-}
-
 interface AppContextValue {
   creds: Credentials;
   setCreds: (c: Credentials) => void;
-  setPreset: (p: ProviderPreset) => void;
+  setPreset: (p: ProviderFamily) => void;
   activeUrl: string;
 
   models: string[];
@@ -74,13 +69,29 @@ interface AppContextValue {
   clearHistory: () => void;
 }
 
+/**
+ * Old localStorage may hold v1 preset values ("custom", "groq", …).
+ * The only family that survives a reload untouched is a known one.
+ */
+function sanitizePreset(p: unknown): ProviderFamily {
+  return p === "anthropic" || p === "gemini" ? p : "openai-compatible";
+}
+
 const AppContext = createContext<AppContextValue | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [creds, setCredsState] = useLocalStorage<Credentials>(
     "model_tester_credentials",
-    { preset: "custom", url: "", key: "" },
+    { preset: "openai-compatible", url: "", key: "" },
   );
+
+  // Normalize preset once on mount (cheap; runs before any user action).
+  useEffect(() => {
+    if (creds.preset !== sanitizePreset(creds.preset)) {
+      setCredsState((prev) => ({ ...prev, preset: "openai-compatible" }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [models, setModels] = useState<string[]>([]);
   const [rows, setRows] = useState<Record<string, ModelRow>>({});
@@ -249,5 +260,3 @@ export function latencyColor(ms: number, cap = 3000): string {
   if (pct < 0.75) return "bg-amber-500";
   return "bg-rose-500";
 }
-
-export { PRESETS, PRESET_LABELS };

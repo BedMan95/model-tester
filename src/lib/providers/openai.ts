@@ -12,12 +12,10 @@ import {
   makeMetrics,
   normalizeMessages,
   toApiError,
+  type CompletionCallbacks,
 } from "./shared";
 
-export interface CompletionCallbacks {
-  onChunk: (text: string) => void;
-  signal?: AbortSignal;
-}
+export type { CompletionCallbacks };
 
 const TINY_PNG =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMBAQDJ/pLvAAAAAElFTkSuQmCC";

@@ -11,7 +11,10 @@ import {
   isLimitError,
   makeMetrics,
   toApiError,
+  type CompletionCallbacks,
 } from "./shared";
+
+export type { CompletionCallbacks };
 
 const API = "https://api.anthropic.com";
 const TINY_PNG_BASE64 =
@@ -88,10 +91,6 @@ export async function listModels(
   }
 }
 
-export interface CompletionCallbacks {
-  onChunk: (text: string) => void;
-  signal?: AbortSignal;
-}
 
 /**
  * Native SSE streaming with real time-to-first-token.

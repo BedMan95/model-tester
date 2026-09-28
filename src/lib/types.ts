@@ -33,6 +33,8 @@ export type ChatRole = "system" | "user" | "assistant";
 export interface ChatMessage {
   role: ChatRole;
   content: string;
+  /** Model that generated this message (assistant only). */
+  model?: string;
 }
 
 /** Compact latency/throughput snapshot attached to every completion. */

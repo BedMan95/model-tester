@@ -91,9 +91,9 @@ export default function ChatTab() {
           }
         }
       }
-      appendMessage(sessionId, { role: "assistant", content: full });
+      appendMessage(sessionId, { role: "assistant", content: full, model: base.model || modelForSend });
     } catch (e) {
-      appendMessage(sessionId, { role: "assistant", content: `Network error: ${(e as Error).message}` });
+      appendMessage(sessionId, { role: "assistant", content: `Network error: ${(e as Error).message}`, model: base.model || modelForSend });
     } finally {
       setStreamText("");
       setBusy(false);
@@ -168,7 +168,7 @@ export default function ChatTab() {
             </p>
           )}
           {active?.messages.map((m, i) => (
-            <Bubble key={i} msg={m} model={m.role === "assistant" ? active.model : undefined} />
+            <Bubble key={i} msg={m} model={m.model} />
           ))}
           {streamText && <Bubble msg={{ role: "assistant", content: streamText }} streaming model={active?.model} />}
           <div ref={bottomRef} />

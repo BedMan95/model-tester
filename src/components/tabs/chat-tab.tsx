@@ -5,13 +5,12 @@ import { useApp } from "@/components/app-store";
 import { Button, ModelSelect } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import type { ChatMessage } from "@/lib/types";
-import { motion, AnimatePresence, useReducedMotion } from "motion/react";
-import { Plus, X, User, Robot, ArrowRight, Trash } from "@phosphor-icons/react";
+import { motion, useReducedMotion } from "motion/react";
+import { Plus, User, Robot, ArrowRight, Trash } from "@phosphor-icons/react";
 
 export default function ChatTab() {
   const app = useApp();
   const { sessions, activeSessionId, setActiveSessionId, createSession, deleteSession, getSession, updateSession, appendMessage, titleMessage, models, creds } = app;
-  const reduceMotion = useReducedMotion();
 
   const active = getSession(activeSessionId) ?? sessions[0];
 
@@ -20,11 +19,9 @@ export default function ChatTab() {
   }, [sessions, activeSessionId, setActiveSessionId]);
 
   const [input, setInput] = useState("");
-  const [streaming, setStreaming] = useState(false);
   const [streamText, setStreamText] = useState("");
   const [busy, setBusy] = useState(false);
   const [thinking, setThinking] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const modelForSend = active?.model || models[0] || "";
@@ -157,13 +154,13 @@ export default function ChatTab() {
       {/* Chat window — no outer card, content breathes */}
       <section className="flex h-full min-h-0 flex-1 flex-col overflow-hidden" aria-label="Conversation">
         {/* Header bar */}
-        <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3 bg-background/80 backdrop-blur-sm flex-shrink-0">
+        <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3 bg-background/80 backdrop-blur-sm flex-shrink-0 z-[60]">
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-sm font-semibold text-foreground">
               {active?.title ?? "No session"}
             </h1>
             {active && (
-              <div className="mt-1 flex items-center gap-2">
+              <div className="mt-1 flex items-center gap-2 relative z-[50]">
                 {models.length > 0 ? (
                   <ModelSelect
                     value={modelForSend}

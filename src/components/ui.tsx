@@ -1,6 +1,6 @@
 import { cn } from "@/lib/cn";
-import { useState, useRef, useEffect, useCallback, useId } from "react";
-import { CaretDown, CaretUp, MagnifyingGlass, X } from "@phosphor-icons/react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { CaretDown, MagnifyingGlass, X } from "@phosphor-icons/react";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "ghost" | "outline" | "danger";
@@ -100,7 +100,7 @@ export function ModelSelect({
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const optionsRef = useRef<HTMLDivElement>(null);
-  const listId = useId();
+
 
   const filteredModels = models.filter((m) =>
     m.toLowerCase().includes(searchQuery.toLowerCase())
@@ -234,21 +234,29 @@ export function ModelSelect({
             loading && "border-sky-500/50",
             !exactMatch && value && "border-amber-400 dark:border-amber-600",
           )}
-          onClick={() => !disabled && setIsOpen((prev) => !prev)}
+          onClick={(e) => {
+            if (disabled) return;
+            // Only toggle if we're not clicking the input itself
+            if (e.target !== inputRef.current) {
+              setIsOpen((prev) => !prev);
+            }
+          }}
         >
           <MagnifyingGlass className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" weight="regular" />
 
           <input
             ref={inputRef}
             type="text"
-            value={searchQuery || value}
+            value={isOpen ? searchQuery : value}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             onBlur={handleBlur}
-            onFocus={() => !disabled && setIsOpen(true)}
+            onFocus={(e) => {
+              e.stopPropagation();
+              if (!disabled) setIsOpen(true);
+            }}
             placeholder={placeholder}
             disabled={disabled}
-            readOnly={!searchQuery && !isOpen}
             className="flex-1 bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground text-sm font-mono min-w-0"
             aria-autocomplete="list"
             aria-expanded={isOpen}
@@ -274,20 +282,16 @@ export function ModelSelect({
               "flex items-center justify-center h-3.5 w-3.5 text-muted-foreground transition-transform duration-150",
               isOpen && "rotate-180"
             )}>
-              {isOpen ? (
-                <CaretUp className="h-3.5 w-3.5" weight="regular" />
-              ) : (
-                <CaretDown className="h-3.5 w-3.5" weight="regular" />
-              )}
+              <CaretDown className="h-3.5 w-3.5" weight="regular" />
             </span>
-          ))}
-        </div>
+        ))}
+      </div>
 
         {isOpen && (
           <div
             id="model-options"
             ref={optionsRef}
-            className="absolute z-50 top-full left-0 right-0 mt-1.5 rounded-md border border-border bg-card shadow-lg overflow-hidden"
+            className="absolute z-[100] top-full left-0 mt-1.5 w-full rounded-md border border-border bg-card shadow-xl overflow-hidden"
             style={{ maxHeight }}
             role="listbox"
           >

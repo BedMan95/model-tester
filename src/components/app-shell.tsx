@@ -93,7 +93,7 @@ function HeaderContent({ active }: { active: ActiveKey }) {
           </div>
 
           {/* Center: Tabs with animated pill - integrated into header */}
-          <nav className="flex-1 flex items-center justify-center" aria-label="Main navigation">
+          <nav className="hidden md:flex flex-1 items-center justify-center" aria-label="Main navigation">
             <div className="relative flex h-10 items-center gap-0.5" ref={tabContainerRef} role="tablist">
               {/* Animated pill background */}
               {mounted && (

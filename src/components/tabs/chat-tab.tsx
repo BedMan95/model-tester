@@ -112,14 +112,14 @@ export default function ChatTab() {
 
   return (
     <div className="flex h-full min-h-0 gap-4 w-full pb-8 md:pb-0">
-      {/* Sessions sidebar — no card, just clean list */}
+      {/* Sessions sidebar */}
       <aside className="hidden h-full w-56 shrink-0 flex-col gap-3 md:flex" aria-label="Chat sessions">
         <Button variant="primary" size="sm" onClick={handleNewSession} className="w-full justify-start gap-2">
           <Plus className="h-4 w-4" weight="regular" />
           New session
         </Button>
 
-        <div className="flex-1 min-h-0 flex-col gap-0.5 overflow-y-auto">
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-1">
           {sessions.length === 0 ? (
             <div className="px-2 py-4 text-center text-xs text-muted-foreground">
               No sessions yet
@@ -130,20 +130,17 @@ export default function ChatTab() {
                 key={s.id}
                 onClick={() => setActiveSessionId(s.id)}
                 className={cn(
-                  "relative w-full rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-all duration-150 group",
+                  "relative w-full rounded-md px-3 py-2 text-left text-sm font-medium transition-colors duration-150 group",
                   s.id === activeSessionId
                     ? "bg-brand/10 text-brand"
-                    : "text-foreground/80 hover:bg-muted/50 hover:text-foreground",
+                    : "text-foreground/70 hover:bg-muted hover:text-foreground",
                 )}
               >
                 <span className="truncate block">{s.title || "Untitled"}</span>
                 {s.model && (
-                  <span className="mt-1 inline-block truncate font-mono text-[10px] text-muted-foreground group-hover:text-foreground/60 transition-colors">
+                  <span className="mt-0.5 text-[10px] font-mono text-muted-foreground group-hover:text-foreground/60 transition-colors block truncate">
                     {s.model}
                   </span>
-                )}
-                {s.id === activeSessionId && (
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 h-1.5 w-1.5 rounded-full bg-brand transition-transform duration-150" />
                 )}
               </button>
             ))
@@ -151,12 +148,12 @@ export default function ChatTab() {
         </div>
       </aside>
 
-      {/* Chat window — no outer card, content breathes */}
-      <section className="flex h-full min-h-0 flex-1 flex-col overflow-hidden" aria-label="Conversation">
+      {/* Chat window */}
+      <section className="flex h-full min-h-0 flex-1 flex-col" aria-label="Conversation">
         {/* Header bar */}
-        <header className="flex flex-col border-b border-border bg-background/80 backdrop-blur-sm flex-shrink-0 z-[60]">
+        <header className="border-b border-border bg-background/80 backdrop-blur-sm flex-shrink-0 z-[60]">
           {/* Mobile session row */}
-          <div className="flex md:hidden items-center justify-between gap-2 px-4 py-2 border-b border-border/50">
+          <div className="flex md:hidden items-center justify-between gap-2 mb-3 pb-3 border-b border-border/50">
             <select
               value={activeSessionId ?? ""}
               onChange={(e) => setActiveSessionId(e.target.value)}
@@ -166,56 +163,47 @@ export default function ChatTab() {
                 <option key={s.id} value={s.id}>{s.title || "Untitled"}</option>
               ))}
             </select>
-            <Button variant="primary" size="sm" onClick={handleNewSession} className="h-8 px-2">
+            <Button variant="primary" size="sm" onClick={handleNewSession} className="h-9 px-2">
               <Plus className="h-4 w-4" weight="regular" />
             </Button>
           </div>
 
           {/* Desktop/Content Header */}
-          <div className="flex items-center justify-between gap-3 px-4 py-3">
-            <h1 className="text-sm font-semibold text-foreground truncate w-24">
+          <div className="flex items-center justify-between gap-4">
+            <h1 className="text-sm font-semibold text-foreground truncate flex-shrink-0">
               {active?.title ?? "No session"}
             </h1>
 
             <div className="flex-1 flex justify-center">
-              {active && (
-                <div className="relative z-[50]">
-                  {models.length > 0 ? (
-                      <ModelSelect
-                      value={modelForSend}
-                      onChange={(m) => {
-                        if (active) updateSession({ ...active, model: m });
-                        else createSession(m);
-                      }}
-                      models={models}
-                      placeholder="Select a model…"
-                      className="w-48"
-                    />
-                  ) : (
-                    <span className="truncate font-mono text-[11px] text-muted-foreground">
-                      {modelForSend || "no model"}
-                    </span>
-                  )}
-                </div>
+              {active && models.length > 0 && (
+                <ModelSelect
+                  value={modelForSend}
+                  onChange={(m) => {
+                    if (active) updateSession({ ...active, model: m });
+                    else createSession(m);
+                  }}
+                  models={models}
+                  placeholder="Select a model…"
+                  className="w-48"
+                />
               )}
             </div>
 
             {active && (
-              <Button variant="ghost" size="sm" onClick={() => deleteSession(active.id)} className="text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/30">
+              <Button variant="ghost" size="sm" onClick={() => deleteSession(active.id)} className="text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/30 flex-shrink-0">
                 <Trash className="h-4 w-4" weight="regular" />
-                <span className="hidden sm:inline">Delete</span>
               </Button>
             )}
           </div>
         </header>
 
         {/* Messages */}
-        <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-5" role="log" aria-live="polite" aria-label="Messages">
+        <div className="flex-1 min-h-0 overflow-y-auto p-6 space-y-4" role="log" aria-live="polite" aria-label="Messages">
           {(!active || active.messages.length === 0) && !streamText && (
-            <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground/60">
-              <Robot className="h-10 w-10 opacity-30" weight="thin" />
-              <p className="mt-3 text-sm font-medium">No messages yet</p>
-              <p className="mt-1 text-xs">Start a conversation below</p>
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <Robot className="h-12 w-12 text-muted-foreground/30" weight="thin" />
+              <p className="mt-4 text-sm font-medium text-foreground">Start a conversation</p>
+              <p className="mt-1 text-xs text-muted-foreground">Select a model and send your first message</p>
             </div>
           )}
 
@@ -235,16 +223,16 @@ export default function ChatTab() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input area — sticky bottom */}
-        <form onSubmit={(e) => { e.preventDefault(); send(); }} className="flex-shrink-0 border-t border-border bg-background/95 backdrop-blur-sm p-3">
-          <div className="flex gap-2">
+        {/* Input area */}
+        <form onSubmit={(e) => { e.preventDefault(); send(); }} className="flex-shrink-0 border-t border-border bg-background/95 backdrop-blur-sm p-4">
+          <div className="flex gap-3">
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
               placeholder="Ask anything…"
               disabled={busy}
-              className="h-10 flex-1 rounded-lg border border-border bg-card px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand"
+              className="h-10 flex-1 rounded-lg border border-border bg-card px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-50"
               aria-label="Message input"
             />
             <Button
@@ -252,19 +240,13 @@ export default function ChatTab() {
               variant="primary"
               onClick={send}
               disabled={busy || !input.trim()}
-              className="h-10 px-4 gap-2"
+              className="h-10 px-4"
               aria-label="Send message"
             >
               {busy ? (
-                <>
-                  <span className="h-4 w-4 animate-spin rounded-full border border-current border-t-transparent" />
-                  <span className="sr-only">Sending…</span>
-                </>
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
               ) : (
-                <>
-                  <ArrowRight className="h-4 w-4" weight="regular" />
-                  <span>Send</span>
-                </>
+                <ArrowRight className="h-4 w-4" weight="regular" />
               )}
             </Button>
           </div>

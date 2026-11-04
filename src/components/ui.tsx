@@ -29,7 +29,7 @@ export function Button({
           "border border-rose-300 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40",
         className,
       )}
-      disabled={disabled}
+      {...(disabled ? { disabled: true } : {})}
       {...props}
     />
   );

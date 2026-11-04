@@ -3,10 +3,11 @@
 import { useCallback, useMemo, useState } from "react";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { useApp, StatusBadge, CompatChips } from "@/components/app-store";
-import { Button, Card, SectionTitle } from "@/components/ui";
+import { Button, Card, SectionTitle, ModelSelect } from "@/components/ui";
 import { PRESET_LABELS, PRESETS } from "@/lib/types";
 import type { ProviderFamily, ModelTestStatus, CompatResult } from "@/lib/types";
 import { cn } from "@/lib/cn";
+import { MagnifyingGlass, RocketLaunch, Copy, ArrowRight, FileText } from "@phosphor-icons/react";
 
 const CONCURRENCY = 5;
 
@@ -233,16 +234,27 @@ export default function TesterTab() {
   }, [activeRows]);
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <SectionTitle>Endpoint</SectionTitle>
-        <div className="mt-3 grid gap-3 md:grid-cols-[1fr_1.5fr]">
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Provider</label>
+    <div className="flex flex-col h-full min-h-0 space-y-6">
+      {/* Endpoint Configuration */}
+      <section aria-labelledby="endpoint-heading" className="space-y-4 flex-shrink-0">
+        <h2 id="endpoint-heading" className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+          Endpoint
+        </h2>
+
+        <div className="grid gap-4 md:grid-cols-[1fr_1.5fr]">
+          <div className="space-y-2">
+            <label htmlFor="preset-select" className="text-xs font-medium text-muted-foreground">
+              Provider
+            </label>
             <select
+              id="preset-select"
               value={creds.preset}
               onChange={(e) =>
-                setCreds({ ...creds, preset: e.target.value as ProviderFamily, url: PRESETS[e.target.value as ProviderFamily] || creds.url })
+                setCreds({
+                  ...creds,
+                  preset: e.target.value as ProviderFamily,
+                  url: PRESETS[e.target.value as ProviderFamily] || creds.url,
+                })
               }
               className="h-9 w-full rounded-lg border border-border bg-card px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-brand"
             >
@@ -251,9 +263,12 @@ export default function TesterTab() {
               ))}
             </select>
           </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Base URL</label>
+          <div className="space-y-2">
+            <label htmlFor="base-url" className="text-xs font-medium text-muted-foreground">
+              Base URL
+            </label>
             <input
+              id="base-url"
               value={creds.url}
               onChange={(e) => setCreds({ ...creds, url: e.target.value })}
               placeholder="https://api.openai.com/v1"
@@ -261,9 +276,13 @@ export default function TesterTab() {
             />
           </div>
         </div>
-        <div className="mt-3 space-y-1.5">
-          <label className="text-xs font-medium text-muted-foreground">API Key</label>
+
+        <div className="space-y-2">
+          <label htmlFor="api-key" className="text-xs font-medium text-muted-foreground">
+            API Key
+          </label>
           <input
+            id="api-key"
             type="password"
             value={creds.key}
             onChange={(e) => setCreds({ ...creds, key: e.target.value })}
@@ -272,15 +291,18 @@ export default function TesterTab() {
           />
         </div>
 
-        <details className="mt-3 rounded-lg border border-border bg-muted/30 p-3">
+        <details className="rounded-lg border border-border bg-muted/30 p-4">
           <summary className="cursor-pointer select-none text-xs font-semibold text-foreground">
             Advanced parameters
           </summary>
-          <div className="mt-3 grid gap-3 md:grid-cols-2">
-            <div className="space-y-2">
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <div className="space-y-3">
               <div>
-                <label className="text-xs text-muted-foreground">System prompt</label>
+                <label htmlFor="sys-prompt" className="text-xs text-muted-foreground">
+                  System prompt
+                </label>
                 <textarea
+                  id="sys-prompt"
                   rows={2}
                   value={params.sysPrompt}
                   onChange={(e) => update("sysPrompt", e.target.value)}
@@ -288,8 +310,11 @@ export default function TesterTab() {
                 />
               </div>
               <div>
-                <label className="text-xs text-muted-foreground">User prompt</label>
+                <label htmlFor="user-prompt" className="text-xs text-muted-foreground">
+                  User prompt
+                </label>
                 <textarea
+                  id="user-prompt"
                   rows={2}
                   value={params.userPrompt}
                   onChange={(e) => update("userPrompt", e.target.value)}
@@ -297,11 +322,11 @@ export default function TesterTab() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-3">
               {([
-                ["Temperature", "temp", 2],
-                ["Top P", "topP", 1],
-                ["Max Tokens", "maxTokens", 0],
+                ["Temperature", "temp", 0.1],
+                ["Top P", "topP", 0.1],
+                ["Max Tokens", "maxTokens", 1],
               ] as const).map(([label, key, step]) => (
                 <div key={key} className="space-y-1">
                   <label className="text-xs text-muted-foreground">{label}</label>
@@ -317,7 +342,7 @@ export default function TesterTab() {
                 </div>
               ))}
             </div>
-            <div className="col-span-full grid gap-3 md:grid-cols-2">
+            <div className="col-span-full grid gap-4 md:grid-cols-2">
               <div>
                 <label className="text-xs text-muted-foreground">
                   Timeout: <b className="font-mono">{params.timeoutMs / 1000}s</b>
@@ -345,96 +370,125 @@ export default function TesterTab() {
           </div>
         </details>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <Button variant="primary" onClick={doLoad} disabled={loading}>
-            {loading ? "Loading…" : "Load Models"}
+        {error && (
+          <div className="rounded-lg border border-rose-300 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/30 p-3 text-xs text-rose-600 dark:text-rose-400" role="alert">
+            {error}
+          </div>
+        )}
+
+        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border">
+          <Button variant="primary" onClick={doLoad} disabled={loading} className="gap-1.5">
+            {loading ? (
+              <>
+                <span className="h-3.5 w-3.5 animate-spin rounded-full border border-current border-t-transparent" />
+                Loading…
+              </>
+            ) : (
+              "Load Models"
+            )}
           </Button>
           <Button onClick={() => doTest(filteredModels)} disabled={!filteredModels.length}>
-            Test All
+            Test All ({filteredModels.length})
           </Button>
           <Button onClick={() => doTest(Array.from(selected))} disabled={!selected.size}>
             Test Selected ({selected.size})
           </Button>
           <span className="flex-1" />
-          <Button size="sm" onClick={() => doExport("json")}>JSON</Button>
-          <Button size="sm" onClick={() => doExport("csv")}>CSV</Button>
+          <Button size="sm" onClick={() => doExport("json")}>
+            JSON
+          </Button>
+          <Button size="sm" onClick={() => doExport("csv")}>
+            CSV
+          </Button>
         </div>
+      </section>
 
-        {error && (
-          <div className="mt-3 rounded-lg border border-rose-300 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/30 p-3 text-xs text-rose-600 dark:text-rose-400">
-            {error}
-          </div>
-        )}
-      </Card>
-
-      <Card>
-        <SectionTitle
-          action={
-            models.length > 0 ? (
+      {/* Models List */}
+      <section aria-labelledby="models-heading" className="flex-1 min-h-0 flex flex-col space-y-4">
+        <div className="flex items-center justify-between flex-shrink-0">
+          <h2 id="models-heading" className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            Models ({models.length})
+          </h2>
+          {models.length > 0 && (
+            <div className="relative">
               <input
+                type="search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Filter models…"
-                className="h-7 w-44 rounded-lg border border-border bg-card px-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-brand"
+                className="h-8 w-56 rounded-lg border border-border bg-card px-3 pl-8 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand"
               />
-            ) : null
-          }
-        >
-          Models ({models.length})
-        </SectionTitle>
-
-        {activeRows.length > 0 ? (
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            <SummaryChip label="Work" value={summary.ok} tone="ok" />
-            <SummaryChip label="Limit" value={summary.limit} tone="limit" />
-            <SummaryChip label="Fail" value={summary.fail} tone="fail" />
-            <SummaryChip label="Tokens" value={summary.tokens} tone="neutral" />
-          </div>
-        ) : null}
-
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {(["all", "ok", "limit", "fail"] as const).map((f) => (
-            <button
-              key={f}
-              type="button"
-              onClick={() => setFilter(f)}
-              className={cn(
-                "rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors",
-                filter === f
-                  ? "bg-brand text-brand-foreground border-brand"
-                  : "text-muted-foreground border-border hover:bg-muted",
-              )}
-            >
-              {f === "all" ? "All" : f === "ok" ? "Work" : f === "limit" ? "Limit" : "Fail"}
-            </button>
-          ))}
+              <MagnifyingGlass className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" weight="regular" />
+            </div>
+          )}
         </div>
 
+        {activeRows.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 flex-shrink-0" role="group" aria-label="Filter by status">
+            {[
+              { key: "all", label: "All", count: activeRows.length, tone: "neutral" as const },
+              { key: "ok", label: "Work", count: summary.ok, tone: "ok" as const },
+              { key: "limit", label: "Limit", count: summary.limit, tone: "limit" as const },
+              { key: "fail", label: "Fail", count: summary.fail, tone: "fail" as const },
+            ].map(({ key, label, count, tone }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setFilter(key as "all" | "ok" | "limit" | "fail")}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+                  filter === key
+                    ? "bg-brand text-brand-foreground border-brand"
+                    : tone === "ok"
+                    ? "text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
+                    : tone === "limit"
+                    ? "text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/10"
+                    : tone === "fail"
+                    ? "text-rose-600 dark:text-rose-400 border-rose-500/30 hover:bg-rose-500/10"
+                    : "text-muted-foreground border-border hover:bg-muted",
+                )}
+                aria-pressed={filter === key}
+              >
+                {label}
+                <span className={cn("font-mono tabular-nums", filter === key && "text-brand-foreground")}>
+                  {count}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+
         {loading ? (
-          <div className="flex flex-col items-center gap-3 py-12">
+          <div className="flex flex-col items-center gap-3 py-12 flex-1" role="status" aria-live="polite">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand border-t-transparent" />
             <p className="text-xs text-muted-foreground">Loading models…</p>
           </div>
         ) : models.length === 0 ? (
-          <p className="py-8 text-center text-xs text-muted-foreground">
-            No models loaded. Choose a preset and click Load Models.
-          </p>
+          <div className="py-12 text-center flex-1" role="status">
+            <RocketLaunch className="mx-auto h-10 w-10 text-muted-foreground/50" weight="thin" />
+            <p className="mt-3 text-sm text-muted-foreground">No models loaded</p>
+            <p className="mt-1 text-xs text-muted-foreground/70">Choose a provider and click Load Models</p>
+          </div>
         ) : (
-          <div className="mt-3 space-y-4">
+          <div className="flex-1 min-h-0 overflow-y-auto space-y-4">
             {Object.entries(grouped).map(([provider, list]) => (
-              <div key={provider} className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <h5 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    {provider} <span className="font-normal">({list.length})</span>
-                  </h5>
-                  <Button size="sm" onClick={() => doTest(list)}>Test {list.length}</Button>
+              <div key={provider} className="space-y-1">
+                <div className="flex items-center justify-between sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-3 py-2 border-b border-border">
+                  <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    {provider} <span className="font-normal text-foreground/70">({list.length})</span>
+                  </h3>
+                  <Button size="sm" onClick={() => doTest(list)} className="gap-1">
+                    Test {list.length}
+                    <ArrowRight className="h-3 w-3" weight="regular" />
+                  </Button>
                 </div>
-                <div className="divide-y divide-border rounded-lg border border-border bg-card/50">
+
+                <div className="divide-y divide-border bg-card/50 rounded-lg border border-border overflow-hidden">
                   {list.map((m) => {
                     const row = rows[m];
                     const isSel = selected.has(m);
                     return (
-                      <div key={m} className="flex items-center justify-between gap-2 px-3 py-2">
+                      <div key={m} className="flex items-center justify-between gap-3 px-3 py-2.5 hover:bg-muted/30 transition-colors">
                         <div className="flex min-w-0 items-center gap-2">
                           <input
                             type="checkbox"
@@ -444,12 +498,13 @@ export default function TesterTab() {
                               next.has(m) ? next.delete(m) : next.add(m);
                               setSelected(next);
                             }}
-                            className="h-3.5 w-3.5 accent-brand"
+                            className="h-3.5 w-3.5 accent-brand shrink-0"
+                            aria-label={`Select ${m}`}
                           />
                           <span className="truncate font-mono text-xs text-foreground">{m}</span>
                           {row?.metrics && (
                             <span className="hidden text-[10px] text-muted-foreground sm:inline" title={JSON.stringify(row.metrics)}>
-                              {row.metrics.latency}ms
+                              {row.metrics.latency}ms · {row.metrics.tps}t/s
                             </span>
                           )}
                         </div>
@@ -466,18 +521,25 @@ export default function TesterTab() {
                                 e.stopPropagation();
                                 navigator.clipboard.writeText(m);
                               }}
-                              className="px-1.5 py-0.5 text-[10px] font-mono text-brand hover:bg-brand/10 rounded"
+                              className="p-1.5 text-brand hover:bg-brand/10 rounded transition-colors"
                               title="Copy model ID"
+                              aria-label={`Copy ${m}`}
                             >
-                              Copy
+                              <Copy className="h-3 w-3" weight="regular" />
                             </button>
                           )}
-                          <Button size="sm" variant="ghost" className="px-1.5 py-0.5 text-[10px]" onClick={() => doCompat(m)} disabled={compatLoading === m}>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="px-2 py-1 text-[10px] gap-1"
+                            onClick={() => doCompat(m)}
+                            disabled={compatLoading === m}
+                          >
                             {compatLoading === m ? (
-                              <span className="flex items-center gap-1">
+                              <>
                                 <span className="h-3 w-3 animate-spin rounded-full border border-current border-t-transparent" />
-                                <span>…</span>
-                              </span>
+                                <span>Checking…</span>
+                              </>
                             ) : (
                               "Compat"
                             )}
@@ -491,7 +553,7 @@ export default function TesterTab() {
             ))}
           </div>
         )}
-      </Card>
+      </section>
     </div>
   );
 }
@@ -504,8 +566,8 @@ function SummaryChip({ label, value, tone }: { label: string; value: number; ton
     neutral: "border-border text-muted-foreground",
   }[tone];
   return (
-    <span className={cn("inline-flex items-center gap-1 rounded-full border bg-card px-2 py-0.5 text-xs", cls)}>
-      {label}: <b className="font-mono">{value}</b>
+    <span className={cn("inline-flex items-center gap-1.5 rounded-full border bg-card px-2.5 py-1 text-xs", cls)}>
+      {label}: <b className="font-mono tabular-nums">{value}</b>
     </span>
   );
 }

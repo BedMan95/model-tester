@@ -223,7 +223,7 @@ export function StatusBadge({
     ok: { cls: "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400", text: "Work" },
     limit: { cls: "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400", text: "Limit" },
     fail: { cls: "border-rose-500/40 bg-rose-500/10 text-rose-600 dark:text-rose-400", text: "Fail" },
-    testing: { cls: "border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-400 animate-pulse", text: "Testing…" },
+    testing: { cls: "border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-400", text: "Testing…" },
     untested: { cls: "border-zinc-300 dark:border-zinc-700 bg-zinc-500/5 text-zinc-500 dark:text-zinc-400", text: "Untested" },
   };
   const m = map[status] ?? map.untested;

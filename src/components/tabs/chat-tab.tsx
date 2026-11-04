@@ -2,13 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useApp } from "@/components/app-store";
-import { Button, Card, ModelSelect } from "@/components/ui";
+import { Button, ModelSelect } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import type { ChatMessage } from "@/lib/types";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
+import { Plus, X, User, Robot, ArrowRight, Trash } from "@phosphor-icons/react";
 
 export default function ChatTab() {
   const app = useApp();
   const { sessions, activeSessionId, setActiveSessionId, createSession, deleteSession, getSession, updateSession, appendMessage, titleMessage, models, creds } = app;
+  const reduceMotion = useReducedMotion();
 
   const active = getSession(activeSessionId) ?? sessions[0];
 
@@ -22,12 +25,16 @@ export default function ChatTab() {
   const [busy, setBusy] = useState(false);
   const [thinking, setThinking] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const modelForSend = active?.model || models[0] || "";
 
-  const scrollToBottom = () => bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    scrollToBottom();
   }, [active?.messages.length, streamText]);
 
   const send = async () => {
@@ -104,126 +111,246 @@ export default function ChatTab() {
     }
   };
 
+  const handleNewSession = () => createSession(modelForSend);
+
   return (
-    <div className="flex h-[calc(100vh-8.5rem)] gap-4">
-      {/* Sessions */}
-      <div className="hidden w-56 shrink-0 flex-col gap-2 md:flex">
-        <Button variant="primary" size="sm" onClick={() => createSession(modelForSend)}>
-          + New session
+    <div className="flex h-full min-h-0 gap-4 w-full">
+      {/* Sessions sidebar — no card, just clean list */}
+      <aside className="hidden h-full w-56 shrink-0 flex-col gap-3 md:flex" aria-label="Chat sessions">
+        <Button variant="primary" size="sm" onClick={handleNewSession} className="w-full justify-start gap-2">
+          <Plus className="h-4 w-4" weight="regular" />
+          New session
         </Button>
-        <div className="flex flex-1 flex-col gap-1 overflow-y-auto rounded-xl border border-border bg-card/50 p-2">
-          {sessions.length === 0 && (
-            <p className="px-2 py-4 text-center text-xs text-muted-foreground">
+
+        <div className="flex-1 min-h-0 flex-col gap-0.5 overflow-y-auto">
+          {sessions.length === 0 ? (
+            <div className="px-2 py-4 text-center text-xs text-muted-foreground">
               No sessions yet
-            </p>
+            </div>
+          ) : (
+            sessions.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => setActiveSessionId(s.id)}
+                className={cn(
+                  "relative w-full rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-all duration-150 group",
+                  s.id === activeSessionId
+                    ? "bg-brand/10 text-brand"
+                    : "text-foreground/80 hover:bg-muted/50 hover:text-foreground",
+                )}
+              >
+                <span className="truncate block">{s.title || "Untitled"}</span>
+                {s.model && (
+                  <span className="mt-1 inline-block truncate font-mono text-[10px] text-muted-foreground group-hover:text-foreground/60 transition-colors">
+                    {s.model}
+                  </span>
+                )}
+                {s.id === activeSessionId && (
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 h-1.5 w-1.5 rounded-full bg-brand transition-transform duration-150" />
+                )}
+              </button>
+            ))
           )}
-          {sessions.map((s) => (
-            <button
-              key={s.id}
-              onClick={() => setActiveSessionId(s.id)}
-              className={cn(
-                "truncate rounded-lg px-2.5 py-2 text-left text-xs font-medium transition-colors",
-                s.id === activeSessionId
-                  ? "bg-brand text-brand-foreground"
-                  : "text-foreground hover:bg-muted",
-              )}
-            >
-              {s.title}
-            </button>
-          ))}
         </div>
-      </div>
+      </aside>
 
-      {/* Chat window */}
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-card/60">
-        <div className="flex items-center justify-between border-b border-border p-3">
-          <div className="min-w-0">
-            <div className="truncate text-xs font-semibold text-foreground">
+      {/* Chat window — no outer card, content breathes */}
+      <section className="flex h-full min-h-0 flex-1 flex-col overflow-hidden" aria-label="Conversation">
+        {/* Header bar */}
+        <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3 bg-background/80 backdrop-blur-sm flex-shrink-0">
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-sm font-semibold text-foreground">
               {active?.title ?? "No session"}
-            </div>
-            <div className="mt-0.5 max-w-full">
-              {models.length > 0 ? (
-                <ModelSelect
-                  value={modelForSend}
-                  onChange={(m) => {
-                    if (active) updateSession({ ...active, model: m });
-                    else createSession(m);
-                  }}
-                  models={models}
-                  placeholder="Select a model…"
-                  className="h-7 max-w-72 text-[10px]"
-                />
-              ) : (
-                <span className="truncate font-mono text-[10px] text-muted-foreground">
-                  {modelForSend || "no model — load in Tester"}
-                </span>
-              )}
-            </div>
+            </h1>
+            {active && (
+              <div className="mt-1 flex items-center gap-2">
+                {models.length > 0 ? (
+                  <ModelSelect
+                    value={modelForSend}
+                    onChange={(m) => {
+                      if (active) updateSession({ ...active, model: m });
+                      else createSession(m);
+                    }}
+                    models={models}
+                    placeholder="Select a model…"
+                    className="h-7 max-w-64 text-[11px]"
+                  />
+                ) : (
+                  <span className="truncate font-mono text-[11px] text-muted-foreground">
+                    {modelForSend || "no model — load in Tester"}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
-          <Button variant="danger" size="sm" onClick={() => active && deleteSession(active.id)}>
-            Delete
-          </Button>
-        </div>
-
-        <div className="flex-1 space-y-3 overflow-y-auto p-4">
-          {(!active || active.messages.length === 0) && !streamText && (
-            <p className="py-10 text-center text-xs text-muted-foreground">
-              No messages yet.
-            </p>
+          {active && (
+            <Button variant="ghost" size="sm" onClick={() => deleteSession(active.id)} className="text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/30">
+              <Trash className="h-4 w-4" weight="regular" />
+              <span className="hidden sm:inline">Delete</span>
+            </Button>
           )}
+        </header>
+
+        {/* Messages */}
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-5" role="log" aria-live="polite" aria-label="Messages">
+          {(!active || active.messages.length === 0) && !streamText && (
+            <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground/60">
+              <Robot className="h-10 w-10 opacity-30" weight="thin" />
+              <p className="mt-3 text-sm font-medium">No messages yet</p>
+              <p className="mt-1 text-xs">Start a conversation below</p>
+            </div>
+          )}
+
           {active?.messages.map((m, i) => (
-            <Bubble key={i} msg={m} model={m.model} />
+            <MessageBubble key={i} msg={m} />
           ))}
-          {streamText && <Bubble msg={{ role: "assistant", content: streamText }} streaming model={active?.model} thinking={thinking} />}
-          <div ref={bottomRef} />
+
+          {streamText && (
+            <MessageBubble
+              msg={{ role: "assistant", content: streamText }}
+              streaming
+              model={active?.model}
+              thinking={thinking}
+            />
+          )}
+
+          <div ref={messagesEndRef} />
         </div>
 
-        <div className="flex gap-2 border-t border-border p-3">
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && send()}
-            placeholder="Ask anything…"
-            disabled={busy}
-            className="h-9 flex-1 rounded-lg border border-border bg-card px-3 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand"
-          />
-          <Button variant="primary" onClick={send} disabled={busy || !input.trim()}>
-            {busy ? "…" : "Send"}
-          </Button>
-        </div>
-      </div>
+        {/* Input area — sticky bottom */}
+        <form onSubmit={(e) => { e.preventDefault(); send(); }} className="flex-shrink-0 border-t border-border bg-background/95 backdrop-blur-sm p-3">
+          <div className="flex gap-2">
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
+              placeholder="Ask anything…"
+              disabled={busy}
+              className="h-10 flex-1 rounded-lg border border-border bg-card px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand"
+              aria-label="Message input"
+            />
+            <Button
+              type="submit"
+              variant="primary"
+              onClick={send}
+              disabled={busy || !input.trim()}
+              className="h-10 px-4 gap-2"
+              aria-label="Send message"
+            >
+              {busy ? (
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border border-current border-t-transparent" />
+                  <span className="sr-only">Sending…</span>
+                </>
+              ) : (
+                <>
+                  <ArrowRight className="h-4 w-4" weight="regular" />
+                  <span>Send</span>
+                </>
+              )}
+            </Button>
+          </div>
+        </form>
+      </section>
     </div>
   );
 }
 
-function Bubble({ msg, streaming, model, thinking }: { msg: ChatMessage; streaming?: boolean; model?: string; thinking?: boolean }) {
+function MessageBubble({
+  msg,
+  streaming,
+  model,
+  thinking,
+}: { msg: ChatMessage; streaming?: boolean; model?: string; thinking?: boolean }) {
   const isUser = msg.role === "user";
+  const reduceMotion = useReducedMotion();
+
   return (
-    <div className={cn("flex flex-col", isUser ? "items-end" : "items-start")}>
-      <span className="mb-0.5 text-[10px] text-muted-foreground flex items-center gap-1">
-        {msg.role}
-        {!isUser && model && <span className="px-1.5 py-0.5 rounded bg-brand/10 text-brand text-[9px] font-mono">{model}</span>}
-        {!isUser && (thinking || streaming) && (
-          <span className="flex items-center gap-0.5 text-[9px] text-muted-foreground">
-            <span className="flex gap-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-current animate-bounce" style={{animationDelay: '0ms'}} />
-              <span className="w-1.5 h-1.5 rounded-full bg-current animate-bounce" style={{animationDelay: '150ms'}} />
-              <span className="w-1.5 h-1.5 rounded-full bg-current animate-bounce" style={{animationDelay: '300ms'}} />
+    <motion.div
+      initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+      animate={reduceMotion ? false : { opacity: 1, y: 0 }}
+      transition={{ duration: 0.15, ease: "easeOut" }}
+      className={cn("flex gap-3", isUser ? "flex-row-reverse" : "flex-row")}
+    >
+      {!isUser && (
+        <div className="relative shrink-0 w-7 h-7 rounded-full bg-brand/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+          <Robot className="h-4 w-4 text-brand" weight="regular" />
+        </div>
+      )}
+
+      <div className={cn("flex-1 min-w-0", isUser ? "text-right" : "text-left")}>
+        <div className="flex items-center gap-2 mb-1">
+          {!isUser && model && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-brand/10 px-2 py-0.5 text-[10px] font-mono text-brand">
+              {model}
             </span>
+          )}
+          <span className="text-[11px] font-medium text-muted-foreground">
+            {isUser ? "You" : "Assistant"}
           </span>
-        )}
-      </span>
-      <div
-        className={cn(
-          "max-w-[85%] whitespace-pre-wrap rounded-xl px-3 py-2 text-xs font-mono",
-          isUser
-            ? "bg-brand text-brand-foreground"
-            : "border border-border bg-muted/50 text-foreground",
-        )}
-      >
-        {msg.content}
-        {streaming && <span className="animate-pulse">▋</span>}
+          {!isUser && (thinking || streaming) && (
+            <ThinkingIndicator />
+          )}
+        </div>
+
+        <div
+          className={cn(
+            "inline-block max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm font-mono leading-relaxed",
+            isUser
+              ? "bg-brand text-brand-foreground rounded-tr-sm"
+              : "bg-muted/50 text-foreground rounded-tl-sm border border-border",
+          )}
+        >
+          {msg.content}
+          {streaming && <span className="ml-1 animate-pulse text-brand">▋</span>}
+        </div>
       </div>
-    </div>
+
+      {isUser && (
+        <div className="relative shrink-0 w-7 h-7 rounded-full bg-muted/50 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+          <User className="h-4 w-4 text-muted-foreground" weight="regular" />
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+function ThinkingIndicator() {
+  const reduceMotion = useReducedMotion();
+
+  if (reduceMotion) {
+    return (
+      <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground" aria-label="Thinking">
+        <span className="flex gap-0.5" aria-hidden="true">
+          <span className="w-1.5 h-1.5 rounded-full bg-current opacity-50" />
+          <span className="w-1.5 h-1.5 rounded-full bg-current opacity-50" />
+          <span className="w-1.5 h-1.5 rounded-full bg-current opacity-50" />
+        </span>
+        <span className="hidden sm:inline">Thinking…</span>
+      </span>
+    );
+  }
+
+  return (
+    <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground" aria-label="Thinking">
+      <span className="flex gap-0.5" aria-hidden="true">
+        <motion.span
+          className="w-1.5 h-1.5 rounded-full bg-current"
+          animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }}
+          transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.span
+          className="w-1.5 h-1.5 rounded-full bg-current"
+          animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }}
+          transition={{ duration: 0.6, repeat: Infinity, delay: 0.15, ease: "easeInOut" }}
+        />
+        <motion.span
+          className="w-1.5 h-1.5 rounded-full bg-current"
+          animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }}
+          transition={{ duration: 0.6, repeat: Infinity, delay: 0.3, ease: "easeInOut" }}
+        />
+      </span>
+      <span className="hidden sm:inline">Thinking…</span>
+    </span>
   );
 }

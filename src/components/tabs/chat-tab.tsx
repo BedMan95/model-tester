@@ -111,7 +111,7 @@ export default function ChatTab() {
   const handleNewSession = () => createSession(modelForSend);
 
   return (
-    <div className="flex h-full min-h-0 gap-4 w-full pb-16 md:pb-0">
+    <div className="flex h-full min-h-0 gap-4 w-full pb-8 md:pb-0">
       {/* Sessions sidebar — no card, just clean list */}
       <aside className="hidden h-full w-56 shrink-0 flex-col gap-3 md:flex" aria-label="Chat sessions">
         <Button variant="primary" size="sm" onClick={handleNewSession} className="w-full justify-start gap-2">
@@ -176,7 +176,7 @@ export default function ChatTab() {
             <h1 className="text-sm font-semibold text-foreground truncate w-24">
               {active?.title ?? "No session"}
             </h1>
-            
+
             <div className="flex-1 flex justify-center">
               {active && (
                 <div className="relative z-[50]">

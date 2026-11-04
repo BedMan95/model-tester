@@ -111,7 +111,7 @@ export default function ChatTab() {
   const handleNewSession = () => createSession(modelForSend);
 
   return (
-    <div className="flex h-full min-h-0 gap-4 w-full">
+    <div className="flex h-full min-h-0 gap-4 w-full pb-16 md:pb-0">
       {/* Sessions sidebar — no card, just clean list */}
       <aside className="hidden h-full w-56 shrink-0 flex-col gap-3 md:flex" aria-label="Chat sessions">
         <Button variant="primary" size="sm" onClick={handleNewSession} className="w-full justify-start gap-2">
@@ -154,38 +154,59 @@ export default function ChatTab() {
       {/* Chat window — no outer card, content breathes */}
       <section className="flex h-full min-h-0 flex-1 flex-col overflow-hidden" aria-label="Conversation">
         {/* Header bar */}
-        <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3 bg-background/80 backdrop-blur-sm flex-shrink-0 z-[60]">
-          <div className="min-w-0 flex-1">
-            <h1 className="truncate text-sm font-semibold text-foreground">
+        <header className="flex flex-col border-b border-border bg-background/80 backdrop-blur-sm flex-shrink-0 z-[60]">
+          {/* Mobile session row */}
+          <div className="flex md:hidden items-center justify-between gap-2 px-4 py-2 border-b border-border/50">
+            <select
+              value={activeSessionId ?? ""}
+              onChange={(e) => setActiveSessionId(e.target.value)}
+              className="h-9 flex-1 rounded-md border border-border bg-card px-3 text-sm font-mono text-foreground focus:ring-2 focus:ring-brand focus:border-transparent outline-none transition-colors"
+            >
+              {sessions.map((s) => (
+                <option key={s.id} value={s.id}>{s.title || "Untitled"}</option>
+              ))}
+            </select>
+            <Button variant="primary" size="sm" onClick={handleNewSession} className="h-8 px-2">
+              <Plus className="h-4 w-4" weight="regular" />
+            </Button>
+          </div>
+
+          {/* Desktop/Content Header */}
+          <div className="flex items-center justify-between gap-3 px-4 py-3">
+            <h1 className="text-sm font-semibold text-foreground truncate w-24">
               {active?.title ?? "No session"}
             </h1>
+            
+            <div className="flex-1 flex justify-center">
+              {active && (
+                <div className="relative z-[50]">
+                  {models.length > 0 ? (
+                      <ModelSelect
+                      value={modelForSend}
+                      onChange={(m) => {
+                        if (active) updateSession({ ...active, model: m });
+                        else createSession(m);
+                      }}
+                      models={models}
+                      placeholder="Select a model…"
+                      className="w-48"
+                    />
+                  ) : (
+                    <span className="truncate font-mono text-[11px] text-muted-foreground">
+                      {modelForSend || "no model"}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+
             {active && (
-              <div className="mt-1 flex items-center gap-2 relative z-[50]">
-                {models.length > 0 ? (
-                  <ModelSelect
-                    value={modelForSend}
-                    onChange={(m) => {
-                      if (active) updateSession({ ...active, model: m });
-                      else createSession(m);
-                    }}
-                    models={models}
-                    placeholder="Select a model…"
-                    className="h-7 max-w-64 text-[11px]"
-                  />
-                ) : (
-                  <span className="truncate font-mono text-[11px] text-muted-foreground">
-                    {modelForSend || "no model — load in Tester"}
-                  </span>
-                )}
-              </div>
+              <Button variant="ghost" size="sm" onClick={() => deleteSession(active.id)} className="text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/30">
+                <Trash className="h-4 w-4" weight="regular" />
+                <span className="hidden sm:inline">Delete</span>
+              </Button>
             )}
           </div>
-          {active && (
-            <Button variant="ghost" size="sm" onClick={() => deleteSession(active.id)} className="text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/30">
-              <Trash className="h-4 w-4" weight="regular" />
-              <span className="hidden sm:inline">Delete</span>
-            </Button>
-          )}
         </header>
 
         {/* Messages */}

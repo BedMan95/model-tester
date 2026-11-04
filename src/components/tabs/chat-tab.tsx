@@ -2,11 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useApp } from "@/components/app-store";
+import type { ChatSession } from "@/components/app-store";
 import { Button, ModelSelect } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import type { ChatMessage } from "@/lib/types";
 import { motion, useReducedMotion } from "motion/react";
-import { Plus, User, Robot, ArrowRight, Trash } from "@phosphor-icons/react";
+import { Plus, User, Robot, ArrowRight, Trash, CaretDown } from "@phosphor-icons/react";
 
 export default function ChatTab() {
   const app = useApp();
@@ -184,16 +185,12 @@ export default function ChatTab() {
         <header className="border-b border-border bg-background/80 backdrop-blur-sm flex-shrink-0 z-[60]">
           {/* Mobile session row */}
           <div className="flex md:hidden items-center justify-between gap-2 mb-3 pb-3 border-b border-border/50">
-            <select
-              value={activeSessionId ?? ""}
-              onChange={(e) => setActiveSessionId(e.target.value)}
-              className="h-9 flex-1 rounded-md border border-border bg-card px-3 text-sm font-mono text-foreground focus:ring-2 focus:ring-brand focus:border-transparent outline-none transition-colors"
-            >
-              {!hydrated && <option value="">Loading…</option>}
-              {hydrated && sessions.map((s) => (
-                <option key={s.id} value={s.id}>{s.title || "Untitled"}</option>
-              ))}
-            </select>
+            <SessionSelect
+              sessions={sessions}
+              hydrated={hydrated}
+              activeId={activeSessionId ?? ""}
+              onChange={setActiveSessionId}
+            />
             <Button variant="primary" size="sm" onClick={handleNewSession} className="h-9 px-2">
               <Plus className="h-4 w-4" weight="regular" />
             </Button>
@@ -201,9 +198,10 @@ export default function ChatTab() {
 
           {/* Desktop/Content Header */}
           <div className="flex items-center justify-between gap-4">
-            <h1 className="text-sm font-semibold text-foreground truncate flex-shrink-0">
-              {active?.title ?? "No session"}
-            </h1>
+              <h1 className="text-sm font-semibold text-foreground truncate flex-shrink-0">
+                <span className="md:hidden">{active?.title?.slice(0, 15) ?? "No session"}</span>
+                <span className="hidden md:inline">{active?.title?.slice(0, 30) ?? "No session"}</span>
+              </h1>
 
             <div className="flex-1 flex justify-center">
               {active && models.length > 0 && (
@@ -343,6 +341,79 @@ function MessageBubble({
         </div>
       </div>
     </motion.div>
+  );
+}
+
+function SessionSelect({
+  sessions,
+  hydrated,
+  activeId,
+  onChange,
+}: {
+  sessions: ChatSession[];
+  hydrated: boolean;
+  activeId: string;
+  onChange: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const active = sessions.find((s) => s.id === activeId);
+
+  return (
+    <div className="relative min-w-0 flex-1" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className="flex items-center gap-2 h-9 w-full rounded-md border border-border bg-card px-3 text-sm font-mono text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+      >
+        <span className="truncate flex-1 text-left">
+          {!hydrated ? "Loading…" : (active?.title || "Untitled").slice(0, 15)}
+        </span>
+        <CaretDown
+          className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform duration-150", open && "rotate-180")}
+          weight="regular"
+        />
+      </button>
+
+      {open && (
+        <div className="absolute z-[100] top-full left-0 mt-1.5 w-full rounded-md border border-border bg-card shadow-xl overflow-hidden">
+          <div className="max-h-[240px] overflow-y-auto" role="listbox">
+            {sessions.length === 0 ? (
+              <div className="px-3 py-4 text-center text-sm text-muted-foreground">No sessions</div>
+            ) : (
+              sessions.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => {
+                    onChange(s.id);
+                    setOpen(false);
+                  }}
+                  className={cn(
+                    "w-full px-3 py-2 text-left text-sm font-mono transition-colors",
+                    s.id === activeId ? "bg-brand/10 text-brand font-medium" : "hover:bg-brand/5 hover:text-brand",
+                  )}
+                >
+                  <span className="block truncate">{(s.title || "Untitled").slice(0, 15)}</span>
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

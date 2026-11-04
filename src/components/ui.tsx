@@ -342,3 +342,73 @@ export function ModelSelect({
     </div>
   );
 }
+
+/**
+ * ProviderSelect - styled dropdown mirroring ModelSelect, fixed option list.
+ */
+export function ProviderSelect({
+  value,
+  onChange,
+  options,
+  className,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+  className?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const active = options.find((o) => o.value === value);
+
+  return (
+    <div className={cn("relative w-full", className)} ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className="flex items-center gap-2 h-9 w-full rounded-lg border border-border bg-card px-3 text-sm font-mono text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+      >
+        <span className="truncate flex-1 text-left">{active?.label ?? value}</span>
+        <CaretDown
+          className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform duration-150", open && "rotate-180")}
+          weight="regular"
+        />
+      </button>
+
+      {open && (
+        <div className="absolute z-[100] top-full left-0 mt-1.5 w-full rounded-md border border-border bg-card shadow-xl overflow-hidden">
+          <div className="max-h-[240px] overflow-y-auto" role="listbox">
+            {options.map((o) => (
+              <button
+                key={o.value}
+                type="button"
+                onClick={() => {
+                  onChange(o.value);
+                  setOpen(false);
+                }}
+                className={cn(
+                  "w-full px-3 py-2 text-left text-sm font-mono transition-colors",
+                  o.value === value ? "bg-brand/10 text-brand font-medium" : "hover:bg-brand/5 hover:text-brand",
+                )}
+              >
+                <span className="block truncate">{o.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -47,7 +47,7 @@ export default function HistoryTab() {
 
   if (history.length === 0) {
     return (
-      <div className="space-y-6">
+      <div className="h-full min-h-0 overflow-y-auto pb-15 md:pb-0 space-y-6">
         <section aria-labelledby="history-empty" className="space-y-4">
           <h2 id="history-empty" className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             History
@@ -76,7 +76,7 @@ export default function HistoryTab() {
   const filteredHistory = filterStatus === "all" ? reversedHistory : reversedHistory.filter(h => h.status === filterStatus);
 
   return (
-    <div className="space-y-6">
+    <div className="h-full min-h-0 overflow-y-auto pb-15 md:pb-0 space-y-6" data-history-scroll>
       {/* Header */}
       <section aria-labelledby="history-heading" className="space-y-4">
         <div className="flex items-center justify-between">

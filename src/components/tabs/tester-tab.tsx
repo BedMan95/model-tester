@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { useApp, StatusBadge, CompatChips } from "@/components/app-store";
-import { Button } from "@/components/ui";
+import { Button, ProviderSelect } from "@/components/ui";
 import { PRESET_LABELS, PRESETS } from "@/lib/types";
 import type { ProviderFamily, ModelTestStatus, CompatResult } from "@/lib/types";
 import { cn } from "@/lib/cn";
@@ -234,7 +234,7 @@ export default function TesterTab() {
   }, [activeRows]);
 
   return (
-    <div className="flex flex-col h-full min-h-0 space-y-6">
+    <div className="flex flex-col h-full min-h-0 space-y-6 pb-15 md:pb-0">
       {/* Endpoint Configuration */}
         <details className="rounded-lg border border-border bg-muted/30 p-4" open>
           <summary className="cursor-pointer select-none text-xs font-semibold text-foreground">
@@ -245,22 +245,17 @@ export default function TesterTab() {
               <label htmlFor="preset-select" className="text-xs font-medium text-muted-foreground">
                 Provider
               </label>
-              <select
-                id="preset-select"
+              <ProviderSelect
                 value={creds.preset}
-                onChange={(e) =>
+                onChange={(v) =>
                   setCreds({
                     ...creds,
-                    preset: e.target.value as ProviderFamily,
-                    url: PRESETS[e.target.value as ProviderFamily] || creds.url,
+                    preset: v as ProviderFamily,
+                    url: PRESETS[v as ProviderFamily] || creds.url,
                   })
                 }
-                className="h-9 w-full rounded-lg border border-border bg-card px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-brand"
-              >
-                {Object.entries(PRESET_LABELS).map(([k, v]) => (
-                  <option key={k} value={k}>{v}</option>
-                ))}
-              </select>
+                options={Object.entries(PRESET_LABELS).map(([k, v]) => ({ value: k, label: v }))}
+              />
             </div>
             <div className="space-y-2">
               <label htmlFor="base-url" className="text-xs font-medium text-muted-foreground">

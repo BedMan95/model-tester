@@ -3,11 +3,11 @@
 import { useCallback, useMemo, useState } from "react";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { useApp, StatusBadge, CompatChips } from "@/components/app-store";
-import { Button, Card, SectionTitle, ModelSelect } from "@/components/ui";
+import { Button } from "@/components/ui";
 import { PRESET_LABELS, PRESETS } from "@/lib/types";
 import type { ProviderFamily, ModelTestStatus, CompatResult } from "@/lib/types";
 import { cn } from "@/lib/cn";
-import { MagnifyingGlass, RocketLaunch, Copy, ArrowRight, FileText } from "@phosphor-icons/react";
+import { MagnifyingGlass, RocketLaunch, Copy, ArrowRight } from "@phosphor-icons/react";
 
 const CONCURRENCY = 5;
 
@@ -236,60 +236,60 @@ export default function TesterTab() {
   return (
     <div className="flex flex-col h-full min-h-0 space-y-6">
       {/* Endpoint Configuration */}
-      <section aria-labelledby="endpoint-heading" className="space-y-4 flex-shrink-0">
-        <h2 id="endpoint-heading" className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-          Endpoint
-        </h2>
-
-        <div className="grid gap-4 md:grid-cols-[1fr_1.5fr]">
-          <div className="space-y-2">
-            <label htmlFor="preset-select" className="text-xs font-medium text-muted-foreground">
-              Provider
-            </label>
-            <select
-              id="preset-select"
-              value={creds.preset}
-              onChange={(e) =>
-                setCreds({
-                  ...creds,
-                  preset: e.target.value as ProviderFamily,
-                  url: PRESETS[e.target.value as ProviderFamily] || creds.url,
-                })
-              }
-              className="h-9 w-full rounded-lg border border-border bg-card px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-brand"
-            >
-              {Object.entries(PRESET_LABELS).map(([k, v]) => (
-                <option key={k} value={k}>{v}</option>
-              ))}
-            </select>
+        <details className="rounded-lg border border-border bg-muted/30 p-4" open>
+          <summary className="cursor-pointer select-none text-xs font-semibold text-foreground">
+            Endpoint Configuration
+          </summary>
+          <div className="mt-4 grid gap-4 md:grid-cols-[1fr_1.5fr]">
+            <div className="space-y-2">
+              <label htmlFor="preset-select" className="text-xs font-medium text-muted-foreground">
+                Provider
+              </label>
+              <select
+                id="preset-select"
+                value={creds.preset}
+                onChange={(e) =>
+                  setCreds({
+                    ...creds,
+                    preset: e.target.value as ProviderFamily,
+                    url: PRESETS[e.target.value as ProviderFamily] || creds.url,
+                  })
+                }
+                className="h-9 w-full rounded-lg border border-border bg-card px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-brand"
+              >
+                {Object.entries(PRESET_LABELS).map(([k, v]) => (
+                  <option key={k} value={k}>{v}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="base-url" className="text-xs font-medium text-muted-foreground">
+                Base URL
+              </label>
+              <input
+                id="base-url"
+                value={creds.url}
+                onChange={(e) => setCreds({ ...creds, url: e.target.value })}
+                placeholder="https://api.openai.com/v1"
+                className="h-9 w-full rounded-lg border border-border bg-card px-3 font-mono text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-brand"
+              />
+            </div>
           </div>
-          <div className="space-y-2">
-            <label htmlFor="base-url" className="text-xs font-medium text-muted-foreground">
-              Base URL
+
+          <div className="space-y-2 mt-4">
+            <label htmlFor="api-key" className="text-xs font-medium text-muted-foreground">
+              API Key
             </label>
             <input
-              id="base-url"
-              value={creds.url}
-              onChange={(e) => setCreds({ ...creds, url: e.target.value })}
-              placeholder="https://api.openai.com/v1"
+              id="api-key"
+              type="password"
+              value={creds.key}
+              onChange={(e) => setCreds({ ...creds, key: e.target.value })}
+              placeholder="sk-…"
               className="h-9 w-full rounded-lg border border-border bg-card px-3 font-mono text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-brand"
             />
           </div>
-        </div>
-
-        <div className="space-y-2">
-          <label htmlFor="api-key" className="text-xs font-medium text-muted-foreground">
-            API Key
-          </label>
-          <input
-            id="api-key"
-            type="password"
-            value={creds.key}
-            onChange={(e) => setCreds({ ...creds, key: e.target.value })}
-            placeholder="sk-…"
-            className="h-9 w-full rounded-lg border border-border bg-card px-3 font-mono text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-brand"
-          />
-        </div>
+        </details>
 
         <details className="rounded-lg border border-border bg-muted/30 p-4">
           <summary className="cursor-pointer select-none text-xs font-semibold text-foreground">
@@ -401,7 +401,6 @@ export default function TesterTab() {
             CSV
           </Button>
         </div>
-      </section>
 
       {/* Models List */}
       <section aria-labelledby="models-heading" className="flex-1 min-h-0 flex flex-col space-y-4">
@@ -495,7 +494,8 @@ export default function TesterTab() {
                             checked={isSel}
                             onChange={() => {
                               const next = new Set(selected);
-                              next.has(m) ? next.delete(m) : next.add(m);
+                              if (next.has(m)) next.delete(m);
+                              else next.add(m);
                               setSelected(next);
                             }}
                             className="h-3.5 w-3.5 accent-brand shrink-0"
@@ -555,19 +555,5 @@ export default function TesterTab() {
         )}
       </section>
     </div>
-  );
-}
-
-function SummaryChip({ label, value, tone }: { label: string; value: number; tone: "ok" | "limit" | "fail" | "neutral" }) {
-  const cls = {
-    ok: "border-emerald-500/30 text-emerald-600 dark:text-emerald-400",
-    limit: "border-amber-500/30 text-amber-600 dark:text-amber-400",
-    fail: "border-rose-500/30 text-rose-600 dark:text-rose-400",
-    neutral: "border-border text-muted-foreground",
-  }[tone];
-  return (
-    <span className={cn("inline-flex items-center gap-1.5 rounded-full border bg-card px-2.5 py-1 text-xs", cls)}>
-      {label}: <b className="font-mono tabular-nums">{value}</b>
-    </span>
   );
 }

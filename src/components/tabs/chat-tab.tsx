@@ -12,7 +12,12 @@ export default function ChatTab() {
   const app = useApp();
   const { sessions, activeSessionId, setActiveSessionId, createSession, deleteSession, getSession, updateSession, appendMessage, titleMessage, models, creds } = app;
 
+  const [hydrated, setHydrated] = useState(false);
   const active = getSession(activeSessionId) ?? sessions[0];
+
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
 
   useEffect(() => {
     if (sessions.length && !activeSessionId) setActiveSessionId(sessions[0].id);
@@ -120,7 +125,11 @@ export default function ChatTab() {
         </Button>
 
         <div className="flex-1 min-h-0 overflow-y-auto space-y-1">
-          {sessions.length === 0 ? (
+          {!hydrated ? (
+            <div className="px-2 py-4 text-center text-xs text-muted-foreground">
+              Loading…
+            </div>
+          ) : sessions.length === 0 ? (
             <div className="px-2 py-4 text-center text-xs text-muted-foreground">
               No sessions yet
             </div>
@@ -270,16 +279,22 @@ function MessageBubble({
       initial={reduceMotion ? false : { opacity: 0, y: 10 }}
       animate={reduceMotion ? false : { opacity: 1, y: 0 }}
       transition={{ duration: 0.15, ease: "easeOut" }}
-      className={cn("flex gap-3", isUser ? "flex-row-reverse" : "flex-row")}
+      className={cn("flex gap-3", isUser ? "flex-row-reverse" : "")}
     >
-      {!isUser && (
-        <div className="relative shrink-0 w-7 h-7 rounded-full bg-brand/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-          <Robot className="h-4 w-4 text-brand" weight="regular" />
-        </div>
-      )}
+      <div className="relative shrink-0 w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" aria-hidden="true"
+        style={{
+          backgroundColor: isUser ? 'var(--color-muted-50)' : 'var(--color-brand-10)'
+        }}
+      >
+        {isUser ? (
+          <User className="h-4 w-4" weight="regular" style={{ color: 'var(--color-muted-foreground)' }} />
+        ) : (
+          <Robot className="h-4 w-4" weight="regular" style={{ color: 'var(--color-brand)' }} />
+        )}
+      </div>
 
       <div className={cn("flex-1 min-w-0", isUser ? "text-right" : "text-left")}>
-        <div className="flex items-center gap-2 mb-1">
+        <div className={cn("flex items-center gap-2 mb-1", isUser ? "flex-row-reverse" : "")}>
           {!isUser && model && (
             <span className="inline-flex items-center gap-1 rounded-full bg-brand/10 px-2 py-0.5 text-[10px] font-mono text-brand">
               {model}
@@ -305,12 +320,6 @@ function MessageBubble({
           {streaming && <span className="ml-1 animate-pulse text-brand">▋</span>}
         </div>
       </div>
-
-      {isUser && (
-        <div className="relative shrink-0 w-7 h-7 rounded-full bg-muted/50 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-          <User className="h-4 w-4 text-muted-foreground" weight="regular" />
-        </div>
-      )}
     </motion.div>
   );
 }

@@ -12,3 +12,5 @@ next-env.d.ts
 .eslintcache
 .DS_Store
 .playwright-mcp
+
+.pi

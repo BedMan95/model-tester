@@ -191,7 +191,7 @@ function ModelPicker({
           onChange={onChange}
           models={models}
           placeholder={models.length ? "Select a model…" : "Load models in Tester first"}
-          className="w-full h-9 pr-8"
+          className="w-full h-9"
         />
       </div>
     </div>

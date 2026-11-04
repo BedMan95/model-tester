@@ -71,7 +71,12 @@ export default function ChatTab() {
         }),
       });
 
+      console.log('[DEBUG] Response status:', res.status);
+      console.log('[DEBUG] Response headers:', res.headers.get('content-type'));
+      console.log('[DEBUG] Response body:', res.body);
+
       if (!res.body) {
+        console.log('[DEBUG] No body, reading as JSON');
         const d = await res.json().catch(() => null);
         appendMessage(sessionId, { role: "assistant", content: d?.reply || d?.error || "No response" });
         return;
@@ -81,30 +86,46 @@ export default function ChatTab() {
       const decoder = new TextDecoder();
       let buffer = "";
       let full = "";
+      let chunkCount = 0;
 
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
+        if (done) {
+          console.log('[DEBUG] Stream done. Total chunks:', chunkCount);
+          break;
+        }
+        const decoded = decoder.decode(value, { stream: true });
+        buffer += decoded;
+        chunkCount++;
+        console.log('[DEBUG] Raw chunk #' + chunkCount + ':', decoded.slice(0, 200));
 
         const lines = buffer.split("\n\n");
         buffer = lines.pop() ?? "";
         for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const ev = JSON.parse(line.slice(6));
-          if (ev.chunk) {
-            if (thinking) setThinking(false);
-            full += ev.chunk;
-            setStreamText(full);
+          if (!line.startsWith("data: ")) {
+            console.log('[DEBUG] Skipping non-data line:', line.slice(0, 50));
+            continue;
           }
-          if (ev.done) {
-            full = ev.error ? `Error: ${ev.error}` : full || "No response";
-            break;
+          try {
+            const ev = JSON.parse(line.slice(6));
+            console.log('[DEBUG] Parsed event:', ev);
+            if (ev.chunk) {
+              if (thinking) setThinking(false);
+              full += ev.chunk;
+              setStreamText(full);
+            }
+            if (ev.done) {
+              full = ev.error ? `Error: ${ev.error}` : full || "No response";
+              break;
+            }
+          } catch (e) {
+            console.log('[DEBUG] JSON parse error:', e, 'line:', line.slice(0, 100));
           }
         }
       }
       appendMessage(sessionId, { role: "assistant", content: full, model: base.model || modelForSend });
     } catch (e) {
+      console.log('[DEBUG] Fetch error:', e);
       appendMessage(sessionId, { role: "assistant", content: `Network error: ${(e as Error).message}`, model: base.model || modelForSend });
     } finally {
       setStreamText("");
@@ -168,7 +189,8 @@ export default function ChatTab() {
               onChange={(e) => setActiveSessionId(e.target.value)}
               className="h-9 flex-1 rounded-md border border-border bg-card px-3 text-sm font-mono text-foreground focus:ring-2 focus:ring-brand focus:border-transparent outline-none transition-colors"
             >
-              {sessions.map((s) => (
+              {!hydrated && <option value="">Loading…</option>}
+              {hydrated && sessions.map((s) => (
                 <option key={s.id} value={s.id}>{s.title || "Untitled"}</option>
               ))}
             </select>
@@ -239,8 +261,8 @@ export default function ChatTab() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-              placeholder="Ask anything…"
-              disabled={busy}
+              placeholder={active ? "Ask anything…" : "Select a session first"}
+              disabled={busy || !active}
               className="h-10 flex-1 rounded-lg border border-border bg-card px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-50"
               aria-label="Message input"
             />
@@ -248,7 +270,7 @@ export default function ChatTab() {
               type="submit"
               variant="primary"
               onClick={send}
-              disabled={busy || !input.trim()}
+              disabled={busy || !active || !input.trim()}
               className="h-10 px-4"
               aria-label="Send message"
             >

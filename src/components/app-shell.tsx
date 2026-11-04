@@ -88,7 +88,7 @@ function HeaderContent({ active }: { active: ActiveKey }) {
               <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-600 via-violet-500 to-fuchsia-500 text-white shadow-sm shadow-indigo-500/20">
                 <Lightning className="h-4 w-4" weight="bold" />
               </span>
-              <span className="font-semibold tracking-tight text-foreground">Model Tester</span>
+              <span className="font-semibold tracking-tight text-foreground">AI Model Tester Studio</span>
             </Link>
           </div>
 

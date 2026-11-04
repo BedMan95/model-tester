@@ -63,7 +63,7 @@ export default function CompareTab() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="h-full overflow-y-auto p-4 md:p-6 space-y-6">
       {/* Configuration — no card, clean sections */}
       <section aria-labelledby="compare-config" className="space-y-4">
         <h2 id="compare-config" className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">

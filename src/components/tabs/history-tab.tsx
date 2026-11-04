@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useApp, StatusBadge } from "@/components/app-store";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/cn";
@@ -10,6 +11,7 @@ import { Clock, ArrowCounterClockwise, Trash, ArrowRight, CalendarBlank } from "
 export default function HistoryTab() {
   const { history, clearHistory, creds, setCreds, models } = useApp();
   const reduceMotion = useReducedMotion();
+  const [filterStatus, setFilterStatus] = useState<"all" | "ok" | "limit" | "fail">("all");
 
   const recall = (r: TestRecord) => {
     setCreds({ ...creds, url: r.url });
@@ -71,6 +73,7 @@ export default function HistoryTab() {
   }
 
   const reversedHistory = [...history].reverse();
+  const filteredHistory = filterStatus === "all" ? reversedHistory : reversedHistory.filter(h => h.status === filterStatus);
 
   return (
     <div className="space-y-6">
@@ -90,9 +93,10 @@ export default function HistoryTab() {
             <button
               key={f}
               type="button"
+              onClick={() => setFilterStatus(f)}
               className={cn(
                 "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
-                f === "all"
+                f === filterStatus
                   ? "bg-brand text-brand-foreground border-brand"
                   : "text-muted-foreground border-border hover:bg-muted hover:text-foreground",
               )}
@@ -108,7 +112,7 @@ export default function HistoryTab() {
         <div className="rounded-2xl border border-border bg-card/50 overflow-hidden">
           <div className="divide-y divide-border">
             <AnimatePresence mode="wait">
-              {reversedHistory.map((h, i) => {
+              {filteredHistory.map((h, i) => {
                 const m = h.metrics;
                 const tone = getStatusTone(h.status);
                 const colors = statusColors[tone];

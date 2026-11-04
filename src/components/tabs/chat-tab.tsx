@@ -295,7 +295,7 @@ function MessageBubble({
 
         <div
           className={cn(
-            "inline-block max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm font-mono leading-relaxed",
+            "inline-block max-w-[85%] whitespace-pre-wrap break-words rounded-2xl px-4 py-2.5 text-sm font-mono leading-relaxed",
             isUser
               ? "bg-brand text-brand-foreground rounded-tr-sm"
               : "bg-muted/50 text-foreground rounded-tl-sm border border-border",

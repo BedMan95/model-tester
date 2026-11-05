@@ -2,6 +2,7 @@
   "name": "ai-model-tester",
   "version": "2.0.0",
   "private": true,
+  "license": "MIT",
   "description": "AI Model Tester Studio",
   "scripts": {
     "dev": "next dev",

@@ -21,6 +21,7 @@
 - [Tech Stack](#tech-stack)
 - [Quick Start](#quick-start)
 - [Usage](#usage)
+- [Security & Privacy](#security--privacy)
 - [Project Structure](#project-structure)
 - [Development](#development)
 - [Deployment](#deployment)
@@ -63,7 +64,7 @@ to or persisted on any server beyond the provider request itself.
 | Language | TypeScript |
 | Icons | Phosphor Icons |
 | Animation | Motion |
-| Provider SDK | OpenAI SDK (compat routes), native REST for Anthropic / Gemini |
+| Provider SDK | OpenAI SDK (lazy-loaded, OpenAI-compatible family), native REST for Anthropic / Gemini |
 
 ## Quick Start
 
@@ -98,6 +99,46 @@ entered in the browser at runtime and stored locally.
    the same prompt against multiple models side by side.
 6. **History** — review the last 100 test records and export as JSON or CSV.
 
+## Security & Privacy
+
+AI Model Tester handles **your** provider API keys, so treat it accordingly:
+
+- **Where keys live.** Credentials are stored in your browser's `localStorage`
+  (key: per-app, under `model_tester_*` entries) and are never written to a
+  database, remote service, or telemetry pipeline.
+- **Browser-direct requests.** By default the browser calls your provider
+  endpoint **directly** — the API key goes to the provider and nowhere else. It
+  never transits the deployment hosting this app. (Anthropic's API is contacted
+  with the `anthropic-dangerous-direct-browser-access` header so browser CORS
+  works; OpenAI's SDK runs client-side.)
+- **Proxy fallback.** Some endpoints do not allow browser requests via CORS
+  (e.g. `api.openai.com`, vLLM deployments without CORS enabled). When a
+  direct call is blocked, the app makes no SDK retries, falls back **once**
+  through its own API routes (`/api/models`, `/api/chat`, `/api/compat`), and
+  shows a "via proxy" badge — for that request the key does transit the
+  deployment, used transiently and never persisted server-side.
+  The blocked endpoint is then **remembered**, so later requests go straight
+  through the proxy without paying a failed direct attempt each time; use
+  "Forget CORS-blocked endpoints" (Tester → Advanced parameters) to retry
+  direct. You can force the proxy for every request with the **Server proxy**
+  toggle in the same place. Enabling CORS for your site's origin on your own
+  router is the cleanest way to keep everything browser-direct.
+- **Local endpoints.** An HTTPS-hosted deployment cannot call `http://localhost`
+  providers (Ollama, LM Studio, vLLM) directly — browsers block mixed content.
+  Run the app from `http://localhost:3000` to test local endpoints.
+- **No server-side storage.** Deployments have no accounts, no secrets, and no
+  environment variables to leak. Everything a deployment needs is the code.
+- **Shared or public devices.** `localStorage` is **unencrypted** — anyone with
+  access to the browser profile can read stored keys. Use a private window or
+  your own machine, and clear the app's site data when done.
+- **Scope keys where possible.** Prefer provider keys that are read-only or
+  limited to the models/endpoints you are testing, with a spend cap. Rotate
+  any key after using the app on a device you don't control.
+- **Public deployments.** Direct mode keeps visitor keys off your server —
+  but any CORS-blocked endpoint still falls back to your proxy (and the `/api`
+  routes remain callable by anyone). Use HTTPS and say plainly in your site
+  that a fallback request transits your deployment.
+
 ## Project Structure
 
 ```
@@ -107,11 +148,14 @@ src/
 ├── components/         # App shell, state store, theme, shared UI, tab views
 │   └── tabs/           # Tester, chat, compare, history tabs
 └── lib/
+    ├── api-client.ts   # Browser-direct transport with /api proxy fallback
     └── providers/      # One module per provider family (openai, anthropic, gemini)
 ```
 
-Routes dispatch on the request's `preset` or `url`; each provider module
-translates the shared request shape into the provider's native API format.
+The browser calls providers directly through `api-client`, which reuses the
+provider modules client-side; each module translates the shared request shape
+into the provider's native API format and dispatches on `preset` or `url`. The
+`/api` routes wrap the same modules and serve as the CORS fallback.
 
 ## Development
 

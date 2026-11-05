@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useApp } from "@/components/app-store";
 import type { ChatSession } from "@/components/app-store";
 import { Button, ModelSelect } from "@/components/ui";
 import { runChat } from "@/lib/api-client";
 import { cn } from "@/lib/cn";
+import { splitThink } from "@/lib/think";
 import type { ChatMessage } from "@/lib/types";
 import { motion, useReducedMotion } from "motion/react";
 import { Plus, User, Robot, ArrowRight, Trash, CaretDown } from "@phosphor-icons/react";
@@ -290,11 +291,67 @@ function MessageBubble({
               : "bg-muted/50 text-foreground rounded-tl-sm border border-border",
           )}
         >
-          {msg.content}
+          {isUser ? (
+            msg.content
+          ) : (
+            <ThinkAwareText text={msg.content} streaming={streaming} />
+          )}
           {streaming && <span className="ml-1 animate-pulse text-brand">▋</span>}
         </div>
       </div>
     </motion.div>
+  );
+}
+
+/** Renders a completion, folding inline reasoning blocks into a toggleable panel. */
+function ThinkAwareText({ text, streaming }: { text: string; streaming?: boolean }) {
+  const segments = splitThink(text);
+  return (
+    <>
+      {segments.map((seg, i) =>
+        seg.thinking ? (
+          <ThinkingTrace
+            key={i}
+            text={seg.text}
+            live={streaming && i === segments.length - 1}
+          />
+        ) : (
+          <span key={i}>{seg.text}</span>
+        ),
+      )}
+    </>
+  );
+}
+
+function ThinkingTrace({ text, live }: { text: string; live?: boolean }) {
+  const [open, setOpen] = useState(false);
+  const id = useId();
+  const show = open || !!live;
+
+  return (
+    <div className="my-2 whitespace-normal border-l border-border pl-3 text-left">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={show}
+        aria-controls={id}
+        className="inline-flex items-baseline gap-1.5 whitespace-nowrap rounded-sm font-mono text-[11px] text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+      >
+        <span aria-hidden="true" className="text-foreground/40">
+          &gt;
+        </span>
+        {show ? "Hide thinking" : "Show thinking"}
+        {live && <span className="animate-pulse">…</span>}
+      </button>
+      {show && (
+        <p
+          id={id}
+          className="mt-1 max-h-44 overflow-y-auto whitespace-pre-wrap font-sans text-xs leading-relaxed text-muted-foreground"
+        >
+          {text}
+        </p>
+      )}
+    </div>
   );
 }
 

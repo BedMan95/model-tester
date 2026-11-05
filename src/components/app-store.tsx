@@ -10,6 +10,12 @@ import {
   type ReactNode,
 } from "react";
 import { useLocalStorage } from "@/hooks/use-local-storage";
+import {
+  subscribeTransport,
+  setForceProxy,
+  clearRememberedProxies,
+  type TransportReport,
+} from "@/lib/api-client";
 import type {
   ChatMessage,
   CompatResult,
@@ -69,6 +75,13 @@ interface AppContextValue {
   history: TestRecord[];
   pushHistory: (r: TestRecord) => void;
   clearHistory: () => void;
+
+  /** Last transport used by api-client; null when direct or expired. */
+  transport: TransportReport | null;
+  forceProxy: boolean;
+  setForceProxy: (on: boolean) => void;
+  /** Forget endpoints remembered as CORS-blocked (retries direct next time). */
+  resetProxyMemory: () => void;
 }
 
 /**
@@ -113,6 +126,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [history, setHistory] = useLocalStorage<TestRecord[]>(
     "model_tester_history",
     [],
+  );
+
+  const [transport, setTransport] = useState<TransportReport | null>(null);
+  useEffect(
+    () =>
+      subscribeTransport((r) => {
+        setTransport(r);
+        if (r.mode === "proxy") {
+          setTimeout(
+            () => setTransport((cur) => (cur?.at === r.at ? null : cur)),
+            10_000,
+          );
+        }
+      }),
+    [],
+  );
+
+  const [forceProxy, setForceProxyState] = useLocalStorage<boolean>(
+    "model_tester_force_proxy",
+    false,
+  );
+  const updateForceProxy = useCallback(
+    (on: boolean) => {
+      setForceProxyState(on);
+      setForceProxy(on);
+    },
+    [setForceProxyState],
   );
 
   const setRow = useCallback(
@@ -185,6 +225,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       history,
       pushHistory: (r) => setHistory((prev) => [r, ...prev].slice(0, 100)),
       clearHistory: () => setHistory([]),
+
+      transport,
+      forceProxy,
+      setForceProxy: updateForceProxy,
+      resetProxyMemory: clearRememberedProxies,
     };
   }, [
     creds,
@@ -198,6 +243,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     activeSessionId,
     history,
     setHistory,
+    transport,
+    forceProxy,
+    updateForceProxy,
   ]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

@@ -1,4 +1,4 @@
-import OpenAI from "openai";
+import type OpenAI from "openai";
 import type {
   ChatRequest,
   CompatResult,
@@ -50,7 +50,7 @@ export async function listModels(
 ): Promise<string[]> {
   const baseURL = openaiBaseURL(req);
   guardUrl(baseURL, req.key || "");
-  const client = makeClient(baseURL, req.key || "", timeout);
+  const client = await makeClient(baseURL, req.key || "", timeout);
   const list = await client.models.list();
   const models: string[] = [];
   for await (const m of list) {
@@ -66,7 +66,7 @@ export async function completion(
   const baseURL = openaiBaseURL(req);
   guardUrl(baseURL, req.key || "");
   const timeout = req.timeoutMs || 30_000;
-  const client = makeClient(baseURL, req.key || "", timeout);
+  const client = await makeClient(baseURL, req.key || "", timeout);
   const t0 = Date.now();
   let ttft = 0;
   let reply = "";
@@ -107,7 +107,7 @@ export async function compatCheck(
 ): Promise<CompatResult> {
   const baseURL = openaiBaseURL(req);
   guardUrl(baseURL, req.key || "");
-  const client = makeClient(baseURL, req.key || "", timeout);
+  const client = await makeClient(baseURL, req.key || "", timeout);
   const model = req.model || "";
   const out: CompatResult = {
     chat: "fail",

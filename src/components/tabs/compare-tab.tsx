@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useApp } from "@/components/app-store";
 import { Button, ModelSelect } from "@/components/ui";
+import { runChat } from "@/lib/api-client";
 import { cn } from "@/lib/cn";
 import type { Metrics } from "@/lib/types";
 import { motion, useReducedMotion } from "motion/react";
@@ -27,18 +28,13 @@ export default function CompareTab() {
   const run = async (model: string, setSide: (s: Side) => void) => {
     setSide({ model, reply: "…" });
     try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url: creds.url || "",
-          key: creds.key,
-          preset: creds.preset,
-          model,
-          userPrompt: prompt || "Hello, summarize AI in one sentence.",
-        }),
+      const d = await runChat({
+        url: creds.url || "",
+        key: creds.key,
+        preset: creds.preset,
+        model,
+        userPrompt: prompt || "Hello, summarize AI in one sentence.",
       });
-      const d = await res.json();
       setSide({ model, reply: d.reply ?? "", error: d.error, metrics: d.metrics });
     } catch (e) {
       setSide({ model, reply: "", error: (e as Error).message });

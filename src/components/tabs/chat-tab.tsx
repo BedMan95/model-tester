@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useApp } from "@/components/app-store";
 import type { ChatSession } from "@/components/app-store";
 import { Button, ModelSelect } from "@/components/ui";
+import { runChat } from "@/lib/api-client";
 import { cn } from "@/lib/cn";
 import type { ChatMessage } from "@/lib/types";
 import { motion, useReducedMotion } from "motion/react";
@@ -59,75 +60,28 @@ export default function ChatTab() {
     setStreamText("");
 
     try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      let full = "";
+      const d = await runChat(
+        {
           url: creds.url || "",
           key: creds.key,
           preset: creds.preset,
           model: base.model || modelForSend,
           messages,
           stream: true,
-        }),
-      });
-
-      console.log('[DEBUG] Response status:', res.status);
-      console.log('[DEBUG] Response headers:', res.headers.get('content-type'));
-      console.log('[DEBUG] Response body:', res.body);
-
-      if (!res.body) {
-        console.log('[DEBUG] No body, reading as JSON');
-        const d = await res.json().catch(() => null);
-        appendMessage(sessionId, { role: "assistant", content: d?.reply || d?.error || "No response" });
-        return;
-      }
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let full = "";
-      let chunkCount = 0;
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) {
-          console.log('[DEBUG] Stream done. Total chunks:', chunkCount);
-          break;
-        }
-        const decoded = decoder.decode(value, { stream: true });
-        buffer += decoded;
-        chunkCount++;
-        console.log('[DEBUG] Raw chunk #' + chunkCount + ':', decoded.slice(0, 200));
-
-        const lines = buffer.split("\n\n");
-        buffer = lines.pop() ?? "";
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) {
-            console.log('[DEBUG] Skipping non-data line:', line.slice(0, 50));
-            continue;
-          }
-          try {
-            const ev = JSON.parse(line.slice(6));
-            console.log('[DEBUG] Parsed event:', ev);
-            if (ev.chunk) {
-              if (thinking) setThinking(false);
-              full += ev.chunk;
-              setStreamText(full);
-            }
-            if (ev.done) {
-              full = ev.error ? `Error: ${ev.error}` : full || "No response";
-              break;
-            }
-          } catch (e) {
-            console.log('[DEBUG] JSON parse error:', e, 'line:', line.slice(0, 100));
-          }
-        }
-      }
-      appendMessage(sessionId, { role: "assistant", content: full, model: base.model || modelForSend });
-    } catch (e) {
-      console.log('[DEBUG] Fetch error:', e);
-      appendMessage(sessionId, { role: "assistant", content: `Network error: ${(e as Error).message}`, model: base.model || modelForSend });
+        },
+        {
+          onChunk: (t) => {
+            setThinking(false);
+            full += t;
+            setStreamText(full);
+          },
+        },
+      );
+      const content = d.error
+        ? `Error: ${d.error}`
+        : full || d.reply || "No response";
+      appendMessage(sessionId, { role: "assistant", content, model: base.model || modelForSend });
     } finally {
       setStreamText("");
       setThinking(false);

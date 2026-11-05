@@ -75,10 +75,21 @@ export function isAnthropic(preset?: string, url?: string): boolean {
   return preset === "anthropic" || (url ?? "").includes("anthropic.com");
 }
 
-export function makeClient(url: string, key: string, timeout: number) {
-  // Lazy import keeps the SDK out of edge cold starts that don't need it.
-  const { OpenAI } = require("openai") as typeof import("openai");
-  return new OpenAI({ apiKey: key || "dummy", baseURL: url, timeout });
+let OpenAIImpl: typeof import("openai").OpenAI | null = null;
+
+export async function makeClient(url: string, key: string, timeout: number) {
+  // Dynamic import keeps the SDK in an on-demand chunk, loaded only for
+  // OpenAI-family calls (browser and server alike).
+  if (!OpenAIImpl) OpenAIImpl = (await import("openai")).OpenAI;
+  return new OpenAIImpl({
+    apiKey: key || "dummy",
+    baseURL: url,
+    timeout,
+    dangerouslyAllowBrowser: true,
+    // One attempt only: latency tests must be deterministic, and in the
+    // browser a retry just repeats a doomed CORS-blocked call.
+    maxRetries: 0,
+  });
 }
 
 /** Normalize legacy sys/user prompts into a messages array. */

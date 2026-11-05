@@ -53,6 +53,7 @@ function authHeaders(key: string): Record<string, string> {
   return {
     "x-api-key": key,
     "anthropic-version": ANTHROPIC_VERSION,
+    "anthropic-dangerous-direct-browser-access": "true",
     "content-type": "application/json",
   };
 }

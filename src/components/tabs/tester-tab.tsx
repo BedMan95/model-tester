@@ -4,8 +4,9 @@ import { useCallback, useMemo, useState } from "react";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { useApp, StatusBadge, CompatChips } from "@/components/app-store";
 import { Button, ProviderSelect } from "@/components/ui";
+import { fetchModels, runChat, runCompat } from "@/lib/api-client";
 import { PRESET_LABELS, PRESETS } from "@/lib/types";
-import type { ProviderFamily, ModelTestStatus, CompatResult } from "@/lib/types";
+import type { ProviderFamily, ModelTestStatus, CompatResult, ChatRequest } from "@/lib/types";
 import { cn } from "@/lib/cn";
 import { MagnifyingGlass, RocketLaunch, Copy, ArrowRight } from "@phosphor-icons/react";
 
@@ -38,7 +39,7 @@ const defaultParams: TestParams = {
 
 export default function TesterTab() {
   const app = useApp();
-  const { creds, setCreds, models, setModels, rows, setRow, resetRows, pushHistory } = app;
+  const { creds, setCreds, models, setModels, rows, setRow, resetRows, pushHistory, forceProxy, setForceProxy, resetProxyMemory } = app;
 
   const [params, setParams] = useLocalStorage<TestParams>("model_tester_params", defaultParams);
   const [search, setSearch] = useState("");
@@ -61,16 +62,11 @@ export default function TesterTab() {
     resetRows();
     setSelected(new Set());
     try {
-      const res = await fetch("/api/models", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url: creds.url || PRESETS[creds.preset] || "",
-          key: creds.key,
-          preset: creds.preset,
-        }),
+      const d = await fetchModels({
+        url: creds.url || PRESETS[creds.preset] || "",
+        key: creds.key,
+        preset: creds.preset,
       });
-      const d = await res.json();
       if (d.error) {
         setError(d.error);
         setModels([]);
@@ -93,7 +89,7 @@ export default function TesterTab() {
   }, [creds, params, setRow]);
 
   const testOne = async (m: string, isRetry = false) => {
-    const base: Record<string, unknown> = {
+    const base: ChatRequest = {
       url: creds.url || PRESETS[creds.preset] || "",
       key: creds.key,
       preset: creds.preset,
@@ -107,12 +103,7 @@ export default function TesterTab() {
     };
 
     try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(base),
-      });
-      const d = await res.json();
+      const d = await runChat(base);
 
       if (d.error && params.autoRetry && !isRetry && /limit|429/i.test(d.error)) {
         await new Promise((r) => setTimeout(r, 2000));
@@ -131,7 +122,7 @@ export default function TesterTab() {
       });
       pushHistory({
         model: m,
-        url: base.url as string,
+        url: base.url ?? "",
         preset: creds.preset,
         status,
         metrics: d.metrics,
@@ -146,17 +137,12 @@ export default function TesterTab() {
     setRow(m, { compat: undefined });
     setCompatLoading(m);
     try {
-      const res = await fetch("/api/compat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url: creds.url || PRESETS[creds.preset] || "",
-          key: creds.key,
-          preset: creds.preset,
-          model: m,
-        }),
+      const d = await runCompat({
+        url: creds.url || PRESETS[creds.preset] || "",
+        key: creds.key,
+        preset: creds.preset,
+        model: m,
       });
-      const d = await res.json();
       if (d.result) setRow(m, { compat: d.result as CompatResult });
     } catch {
       /* ignore */
@@ -352,7 +338,8 @@ export default function TesterTab() {
                   className="mt-1 w-full accent-brand"
                 />
               </div>
-              <label className="flex items-center gap-2 self-end pb-2 text-xs font-medium text-foreground">
+              <div className="flex flex-col gap-2 self-end pb-1">
+              <label className="flex items-center gap-2 text-xs font-medium text-foreground">
                 <input
                   type="checkbox"
                   checked={params.autoRetry}
@@ -361,6 +348,27 @@ export default function TesterTab() {
                 />
                 Auto-retry on rate limit
               </label>
+              <label
+                className="flex items-center gap-2 text-xs font-medium text-foreground"
+                title="Send every request through the server /api proxy instead of calling providers directly from the browser"
+              >
+                <input
+                  type="checkbox"
+                  checked={forceProxy}
+                  onChange={(e) => setForceProxy(e.target.checked)}
+                  className="h-4 w-4 accent-brand"
+                />
+                Server proxy (CORS fallback)
+              </label>
+              <button
+                type="button"
+                onClick={resetProxyMemory}
+                title="Endpoints that failed a direct browser call are remembered and routed via proxy automatically. Clears that memory to try direct again."
+                className="self-start text-[11px] text-muted-foreground underline-offset-2 hover:underline"
+              >
+                Forget CORS-blocked endpoints
+              </button>
+              </div>
             </div>
           </div>
         </details>

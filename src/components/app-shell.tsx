@@ -25,7 +25,7 @@ const NAV: { key: ActiveKey; label: string; href: string }[] = [
 ];
 
 function HeaderContent({ active }: { active: ActiveKey }) {
-  const { creds, models } = useApp();
+  const { creds, models, transport } = useApp();
   const reduceMotion = useReducedMotion();
 
   const tabContainerRef = useRef<HTMLDivElement>(null);
@@ -128,8 +128,18 @@ function HeaderContent({ active }: { active: ActiveKey }) {
             </div>
           </nav>
 
-          {/* Right: Theme toggle */}
+          {/* Right: Transport badge + theme toggle */}
           <div className="flex items-center gap-2">
+            {transport?.mode === "proxy" && (
+              <span
+                role="status"
+                aria-live="polite"
+                title="This endpoint blocked the direct browser call (CORS), so the request was sent through the server proxy and your key transited this deployment for it."
+                className="inline-flex items-center rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400"
+              >
+                via proxy
+              </span>
+            )}
             <ThemeToggle />
           </div>
         </div>
